@@ -1,32 +1,27 @@
 import { render, screen } from '@testing-library/react'
-
 import App from './App'
 
 describe('<App />', () => {
-  it('should render the App', () => {
-    const { container } = render(<App />)
+  it('should render the App with sliding puzzle game', () => {
+    render(<App />)
 
+    // Check for main heading
     expect(
       screen.getByRole('heading', {
-        name: /Welcome!/i,
+        name: /Sliding Puzzle Game/i,
         level: 1
       })
     ).toBeInTheDocument()
 
+    // Check for game description
     expect(
       screen.getByText(
-        /This is a boilerplate build with Vite, React 18, TypeScript, Vitest, Testing Library, TailwindCSS 3, Eslint and Prettier./i
+        /A classic sliding puzzle game built with React and TypeScript/i
       )
     ).toBeInTheDocument()
 
-    expect(
-      screen.getByRole('link', {
-        name: /start building for free/i
-      })
-    ).toBeInTheDocument()
-
-    expect(screen.getByRole('img')).toBeInTheDocument()
-
-    expect(container.firstChild).toBeInTheDocument()
+    // Verify SlidingPuzzle component is rendered
+    expect(screen.getByText(/Moves:/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /New Game/i })).toBeInTheDocument()
   })
 })

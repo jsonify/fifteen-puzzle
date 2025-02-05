@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const SlidingPuzzle = () => {
   const [gameLevel, setGameLevel] = useState(2);  // Start with 2x2

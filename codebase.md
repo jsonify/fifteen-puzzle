@@ -419,68 +419,22 @@ This is a file of the type: SVG Image
 # src/components/App.tsx
 
 ```tsx
-import Avatar from 'components/Avatar'
-import logo from 'assets/logo.svg'
-
-const randoms = [
-  [1, 2],
-  [3, 4, 5],
-  [6, 7]
-]
+import SlidingPuzzle from './SlidingPuzzle'
 
 function App() {
   return (
-    <div className="relative overflow-hidden bg-white">
-      <div className="h-screen sm:pb-40 sm:pt-24 lg:pb-48 lg:pt-40">
-        <div className="relative mx-auto max-w-7xl px-4 sm:static sm:px-6 lg:px-8">
-          <div className="sm:max-w-lg">
-            <div className="my-4">
-              <Avatar size="large" src={logo} />
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Welcome!
-            </h1>
-            <p className="mt-4 text-xl text-gray-500">
-              This is a boilerplate build with Vite, React 18, TypeScript,
-              Vitest, Testing Library, TailwindCSS 3, Eslint and Prettier.
-            </p>
-          </div>
-          <div className="my-10">
-            <a
-              href="vscode://"
-              className="inline-block rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700 focus:ring-offset-2"
-            >
-              Start building for free
-            </a>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none mt-10 md:mt-0 lg:absolute lg:inset-y-0 lg:mx-auto lg:w-full lg:max-w-7xl"
-            >
-              <div className="absolute sm:left-1/2 sm:top-0 sm:translate-x-8 lg:left-1/2 lg:top-1/2 lg:-translate-y-1/2 lg:translate-x-8">
-                <div className="flex items-center space-x-6 lg:space-x-8">
-                  {randoms.map((random, number) => (
-                    <div
-                      key={`random-${random[number]}`}
-                      className="grid shrink-0 grid-cols-1 gap-y-6 lg:gap-y-8"
-                    >
-                      {random.map((number) => (
-                        <div
-                          key={`random-${number}`}
-                          className="h-64 w-44 overflow-hidden rounded-lg sm:opacity-0 lg:opacity-100"
-                        >
-                          <img
-                            src={`https://picsum.photos/600?random=${number}`}
-                            alt=""
-                            className="size-full bg-indigo-100 object-cover object-center"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+            Sliding Puzzle Game
+          </h1>
+          <p className="mt-4 text-xl text-gray-500">
+            A classic sliding puzzle game built with React and TypeScript
+          </p>
+        </div>
+        <div className="mt-10">
+          <SlidingPuzzle />
         </div>
       </div>
     </div>
@@ -488,216 +442,305 @@ function App() {
 }
 
 export default App
-
 ```
 
-# src/components/Avatar/__snapshots__/test.tsx.snap
-
-```snap
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`<Avatar /> > should render the empty Avatar 1`] = `
-<span
-  class="inline-block overflow-hidden bg-gray-100 rounded-full w-12 h-12"
-  data-testid="empty-avatar"
->
-  <svg
-    class="size-full text-gray-300"
-    fill="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z"
-    />
-  </svg>
-</span>
-`;
-
-exports[`<Avatar /> > should render the large Avatar 1`] = `
-<img
-  alt="Avatar"
-  class="inline-block rounded-full w-14 h-14"
-  src="https://gravatar.com/4405735f6f3129e0286d9d43e7b460d0"
-/>
-`;
-
-exports[`<Avatar /> > should render the medium Avatar as default 1`] = `
-<img
-  alt="Avatar"
-  class="inline-block rounded-full w-12 h-12"
-  src="https://gravatar.com/4405735f6f3129e0286d9d43e7b460d0"
-/>
-`;
-
-exports[`<Avatar /> > should render the small Avatar 1`] = `
-<img
-  alt="Avatar"
-  class="inline-block rounded-full w-10 h-10"
-  src="https://gravatar.com/4405735f6f3129e0286d9d43e7b460d0"
-/>
-`;
-
-```
-
-# src/components/Avatar/index.tsx
+# src/components/SlidingPuzzle/index.tsx
 
 ```tsx
-import { classNames } from 'utils'
+import { useState, useEffect, useCallback } from 'react';
 
-type Size = 'small' | 'medium' | 'large'
+const SlidingPuzzle = () => {
+  const [gameLevel, setGameLevel] = useState(2);  // Start with 2x2
+  const [cells, setCells] = useState([]);
+  const [moveCount, setMoveCount] = useState(0);
+  const [bestScores, setBestScores] = useState({});
 
-type AvatarProps = {
-  size?: Size
-  src?: string
-  alt?: string
-}
+  const initializeGame = useCallback(() => {
+    const totalCells = gameLevel * gameLevel;
+    let initialCells = Array.from({length: totalCells - 1}, (_, i) => i + 1);
+    initialCells.push('empty');
+    
+    // Shuffle cells ensuring puzzle is solvable
+    let shuffled;
+    do {
+      shuffled = [...initialCells].sort(() => Math.random() - 0.5);
+    } while (!isSolvable(shuffled, gameLevel));
 
-const sizes: Record<Size, string> = {
-  small: 'w-10 h-10',
-  medium: 'w-12 h-12',
-  large: 'w-14 h-14'
-}
+    setCells(shuffled);
+    setMoveCount(0);
+  }, [gameLevel]);
 
-const EmptyAvatar = ({ size = 'medium' }: Pick<AvatarProps, 'size'>) => (
-  <span
-    data-testid="empty-avatar"
-    className={classNames(
-      'inline-block overflow-hidden bg-gray-100 rounded-full',
-      sizes[size]
-    )}
-  >
-    <svg
-      className="size-full text-gray-300"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  </span>
-)
+  useEffect(() => {
+    initializeGame();
+    // Load best scores from localStorage
+    const savedScores = localStorage.getItem('puzzleBestScores');
+    if (savedScores) {
+      setBestScores(JSON.parse(savedScores));
+    }
+  }, [initializeGame]);
 
-export default function Avatar({ size = 'medium', src, alt }: AvatarProps) {
-  if (!src) {
-    return <EmptyAvatar size={size} />
-  }
+  const isSolvable = (board, size) => {
+    let inversions = 0;
+    const emptyPosition = board.indexOf('empty');
+    const flatBoard = board.filter(x => x !== 'empty');
+    
+    for (let i = 0; i < flatBoard.length - 1; i++) {
+      for (let j = i + 1; j < flatBoard.length; j++) {
+        if (flatBoard[i] > flatBoard[j]) {
+          inversions++;
+        }
+      }
+    }
+
+    if (size % 2 === 0) {
+      const emptyRow = Math.floor(emptyPosition / size);
+      return (inversions + emptyRow) % 2 === 0;
+    }
+    
+    return inversions % 2 === 0;
+  };
+
+  const handleMove = (index) => {
+    const emptyIndex = cells.indexOf('empty');
+    if (!isValidMove(index, emptyIndex)) return;
+
+    const newCells = [...cells];
+    [newCells[index], newCells[emptyIndex]] = [newCells[emptyIndex], newCells[index]];
+    setCells(newCells);
+    setMoveCount(prev => prev + 1);
+
+    if (isWin(newCells)) {
+      handleWin();
+    }
+  };
+
+  const isValidMove = (index, emptyIndex) => {
+    const row = Math.floor(index / gameLevel);
+    const col = index % gameLevel;
+    const emptyRow = Math.floor(emptyIndex / gameLevel);
+    const emptyCol = emptyIndex % gameLevel;
+
+    return (
+      (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+      (Math.abs(col - emptyCol) === 1 && row === emptyRow)
+    );
+  };
+
+  const isWin = (currentCells) => {
+    return currentCells.slice(0, -1).every((cell, index) => cell === index + 1);
+  };
+
+  const handleWin = () => {
+    const currentBest = bestScores[gameLevel] || Infinity;
+    if (moveCount < currentBest) {
+      const newScores = { ...bestScores, [gameLevel]: moveCount };
+      setBestScores(newScores);
+      localStorage.setItem('puzzleBestScores', JSON.stringify(newScores));
+    }
+  };
 
   return (
-    <img
-      className={classNames('inline-block rounded-full', sizes[size])}
-      src={src}
-      alt={alt}
-    />
-  )
-}
+    <div className="flex flex-col items-center p-4">
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold mb-2">Sliding Puzzle</h2>
+        <div className="flex gap-2 mb-4">
+          <button 
+            onClick={initializeGame}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            New Game
+          </button>
+          <select 
+            value={gameLevel}
+            onChange={(e) => setGameLevel(Number(e.target.value))}
+            className="px-4 py-2 border rounded"
+          >
+            {[2,3,4,5,6].map(level => (
+              <option key={level} value={level}>{level}x{level}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
+      <div className="relative w-64 h-64 bg-gray-100 rounded-lg p-2">
+        <div className="relative w-full h-full">
+          {cells.map((cell, index) => (
+            cell !== 'empty' && (
+              <button
+                key={cell}
+                onClick={() => handleMove(index)}
+                style={{
+                  position: 'absolute',
+                  width: `${100/gameLevel}%`,
+                  height: `${100/gameLevel}%`,
+                  left: `${(index % gameLevel) * (100/gameLevel)}%`,
+                  top: `${Math.floor(index / gameLevel) * (100/gameLevel)}%`,
+                  transition: 'all 0.2s',
+                }}
+                className="bg-blue-500 text-white rounded m-0.5 flex items-center justify-center hover:bg-blue-600"
+              >
+                {cell}
+              </button>
+            )
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 text-center">
+        <p className="text-lg">Moves: {moveCount}</p>
+        <p className="text-sm">
+          Best Score ({gameLevel}x{gameLevel}): {bestScores[gameLevel] || '-'}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default SlidingPuzzle;
 ```
 
-# src/components/Avatar/test.tsx
+# src/components/SlidingPuzzle/test.tsx
 
 ```tsx
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import SlidingPuzzle from './index'
 
-import Avatar from '.'
-
-describe('<Avatar />', () => {
-  const props = {
-    src: 'https://gravatar.com/4405735f6f3129e0286d9d43e7b460d0',
-    alt: 'Avatar'
-  }
-
-  it('should render the medium Avatar as default', () => {
-    const { container } = render(<Avatar {...props} />)
-
-    expect(screen.getByRole('img', { name: /Avatar/i })).toBeInTheDocument()
-
-    expect(container.firstChild).toHaveClass(
-      'inline-block w-12 h-12 rounded-full'
-    )
-
-    expect(container.firstChild).toMatchSnapshot()
+describe('<SlidingPuzzle />', () => {
+  beforeEach(() => {
+    // Clear localStorage before each test
+    localStorage.clear()
   })
 
-  it('should render the small Avatar', () => {
-    const { container } = render(<Avatar size="small" {...props} />)
+  it('should render the puzzle board', () => {
+    render(<SlidingPuzzle />)
 
-    expect(screen.getByRole('img', { name: /Avatar/i })).toBeInTheDocument()
-
-    expect(container.firstChild).toHaveClass(
-      'inline-block w-10 h-10 rounded-full'
-    )
-
-    expect(container.firstChild).toMatchSnapshot()
+    // Check for main components
+    expect(screen.getByText('Sliding Puzzle')).toBeInTheDocument()
+    expect(screen.getByText(/Moves:/)).toBeInTheDocument()
+    expect(screen.getByText('New Game')).toBeInTheDocument()
+    
+    // Initial 2x2 board should have 3 numbered cells (1-3) and one empty
+    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
+    expect(buttons).toHaveLength(3)
   })
 
-  it('should render the medium Avatar', () => {
-    const { container } = render(<Avatar size="medium" {...props} />)
+  it('should allow changing the puzzle size', () => {
+    render(<SlidingPuzzle />)
 
-    expect(screen.getByRole('img', { name: /Avatar/i })).toBeInTheDocument()
+    // Change to 3x3 puzzle
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: '3' } })
 
-    expect(container.firstChild).toHaveClass(
-      'inline-block w-12 h-12 rounded-full'
-    )
+    // Should now have 8 numbered cells (1-8)
+    const buttons = screen.getAllByRole('button').filter(button => /^[1-8]$/.test(button.textContent || ''))
+    expect(buttons).toHaveLength(8)
   })
 
-  it('should render the large Avatar', () => {
-    const { container } = render(<Avatar size="large" {...props} />)
+  it('should track moves', async () => {
+    render(<SlidingPuzzle />)
 
-    expect(screen.getByRole('img', { name: /Avatar/i })).toBeInTheDocument()
+    // Initial move count should be 0
+    expect(screen.getByText('Moves: 0')).toBeInTheDocument()
 
-    expect(container.firstChild).toHaveClass(
-      'inline-block w-14 h-14 rounded-full'
-    )
+    // Find a valid move by looking for a button next to the empty space
+    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
+    fireEvent.click(buttons[0])
 
-    expect(container.firstChild).toMatchSnapshot()
+    // Move count should increase after valid move
+    await waitFor(() => {
+      expect(screen.queryByText('Moves: 0')).not.toBeInTheDocument()
+    })
   })
 
-  it('should render the empty Avatar', () => {
-    const { container } = render(<Avatar />)
+  it('should store best scores in localStorage', () => {
+    const mockLocalStorage = {
+      puzzleBestScores: JSON.stringify({
+        '2': 5,
+        '3': 10
+      })
+    }
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key) => mockLocalStorage[key]),
+        setItem: vi.fn()
+      },
+      writable: true
+    })
 
-    expect(screen.getByTestId('empty-avatar')).toBeInTheDocument()
+    render(<SlidingPuzzle />)
 
-    expect(container.firstChild).toMatchSnapshot()
+    // Should display the best score for 2x2 puzzle
+    expect(screen.getByText('Best Score (2x2): 5')).toBeInTheDocument()
+  })
+
+  it('should start new game when button clicked', async () => {
+    render(<SlidingPuzzle />)
+
+    // Make a move
+    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
+    fireEvent.click(buttons[0])
+
+    // Click new game
+    const newGameButton = screen.getByText('New Game')
+    fireEvent.click(newGameButton)
+
+    // Move count should reset to 0
+    await waitFor(() => {
+      expect(screen.getByText('Moves: 0')).toBeInTheDocument()
+    })
+  })
+
+  it('should check for valid moves only', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<SlidingPuzzle />)
+
+    // Track initial move count
+    const initialMoveCount = screen.getByText(/Moves:/).textContent
+
+    // Try clicking all buttons
+    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
+    buttons.forEach(button => {
+      fireEvent.click(button)
+    })
+
+    // At least one button should not have caused a move (not adjacent to empty space)
+    const finalMoveCount = screen.getByText(/Moves:/).textContent
+    expect(finalMoveCount).not.toBe(`Moves: ${buttons.length}`)
   })
 })
-
 ```
 
 # src/components/test.tsx
 
 ```tsx
 import { render, screen } from '@testing-library/react'
-
 import App from './App'
 
 describe('<App />', () => {
-  it('should render the App', () => {
-    const { container } = render(<App />)
+  it('should render the App with sliding puzzle game', () => {
+    render(<App />)
 
+    // Check for main heading
     expect(
       screen.getByRole('heading', {
-        name: /Welcome!/i,
+        name: /Sliding Puzzle Game/i,
         level: 1
       })
     ).toBeInTheDocument()
 
+    // Check for game description
     expect(
       screen.getByText(
-        /This is a boilerplate build with Vite, React 18, TypeScript, Vitest, Testing Library, TailwindCSS 3, Eslint and Prettier./i
+        /A classic sliding puzzle game built with React and TypeScript/i
       )
     ).toBeInTheDocument()
 
-    expect(
-      screen.getByRole('link', {
-        name: /start building for free/i
-      })
-    ).toBeInTheDocument()
-
-    expect(screen.getByRole('img')).toBeInTheDocument()
-
-    expect(container.firstChild).toBeInTheDocument()
+    // Verify SlidingPuzzle component is rendered
+    expect(screen.getByText(/Moves:/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /New Game/i })).toBeInTheDocument()
   })
 })
-
 ```
 
 # src/index.tsx
