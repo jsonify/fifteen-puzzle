@@ -1,150 +1,201 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'
+import GameLevelGrid from '../GameLevelGrid'
+
+interface Position {
+  row: number
+  col: number
+}
+
+interface Cell {
+  value: number | null
+  position: Position
+}
 
 const SlidingPuzzle = () => {
-  const [gameLevel, setGameLevel] = useState(2);  // Start with 2x2
-  const [cells, setCells] = useState([]);
-  const [moveCount, setMoveCount] = useState(0);
-  const [bestScores, setBestScores] = useState({});
+  const [gameLevel, setGameLevel] = useState(2)
+  const [cells, setCells] = useState<Cell[]>([])
+  const [moves, setMoves] = useState(0)
+  const [isComplete, setIsComplete] = useState(false)
+  const [bestScores, setBestScores] = useState<Record<number, number>>({})
 
-  const initializeGame = useCallback(() => {
-    const totalCells = gameLevel * gameLevel;
-    let initialCells = Array.from({length: totalCells - 1}, (_, i) => i + 1);
-    initialCells.push('empty');
-    
-    // Shuffle cells ensuring puzzle is solvable
-    let shuffled;
-    do {
-      shuffled = [...initialCells].sort(() => Math.random() - 0.5);
-    } while (!isSolvable(shuffled, gameLevel));
+  // Check if a move is valid
+  const isValidMove = (index: number): boolean => {
+    const emptyIndex = cells.findIndex(cell => cell.value === null)
+    const emptyPos = cells[emptyIndex].position
+    const clickedPos = cells[index].position
 
-    setCells(shuffled);
-    setMoveCount(0);
-  }, [gameLevel]);
+    return (
+      (Math.abs(emptyPos.row - clickedPos.row) === 1 && emptyPos.col === clickedPos.col) ||
+      (Math.abs(emptyPos.col - clickedPos.col) === 1 && emptyPos.row === clickedPos.row)
+    )
+  }
 
-  useEffect(() => {
-    initializeGame();
-    // Load best scores from localStorage
-    const savedScores = localStorage.getItem('puzzleBestScores');
-    if (savedScores) {
-      setBestScores(JSON.parse(savedScores));
+  // Calculate if the puzzle is solved
+  const checkWin = useCallback(() => {
+    return cells.every((cell, index) => {
+      if (index === cells.length - 1) return cell.value === null
+      return cell.value === index + 1
+    })
+  }, [cells])
+
+  // Handle cell click
+  const handleCellClick = (index: number) => {
+    if (isComplete || !isValidMove(index)) return
+
+    const newCells = [...cells]
+    const emptyIndex = cells.findIndex(cell => cell.value === null)
+
+    // Swap cells
+    const temp = newCells[index].value
+    newCells[index].value = null
+    newCells[emptyIndex].value = temp
+
+    setCells(newCells)
+    setMoves(prev => prev + 1)
+
+    // Check for win condition
+    if (checkWin()) {
+      handleWin()
     }
-  }, [initializeGame]);
+  }
 
-  const isSolvable = (board, size) => {
-    let inversions = 0;
-    const emptyPosition = board.indexOf('empty');
-    const flatBoard = board.filter(x => x !== 'empty');
+  // Handle win condition
+  const handleWin = () => {
+    setIsComplete(true)
+    const currentBest = bestScores[gameLevel] || Infinity
+    if (moves < currentBest) {
+      setBestScores(prev => ({
+        ...prev,
+        [gameLevel]: moves
+      }))
+      localStorage.setItem('puzzleBestScores', JSON.stringify({
+        ...bestScores,
+        [gameLevel]: moves
+      }))
+    }
+  }
+
+  // Initialize the game board
+  const initializeGame = useCallback(() => {
+    const totalCells = gameLevel * gameLevel
+    const numbers = Array.from({ length: totalCells - 1 }, (_, i) => i + 1)
+    
+    // Shuffle numbers ensuring puzzle is solvable
+    let shuffled
+    do {
+      shuffled = [...numbers, null].sort(() => Math.random() - 0.5)
+    } while (!isSolvable(shuffled, gameLevel))
+
+    const newCells = shuffled.map((value, index) => ({
+      value,
+      position: {
+        row: Math.floor(index / gameLevel),
+        col: index % gameLevel
+      }
+    }))
+
+    setCells(newCells)
+    setMoves(0)
+    setIsComplete(false)
+  }, [gameLevel])
+
+  // Check if puzzle configuration is solvable
+  const isSolvable = (board: (number | null)[], size: number): boolean => {
+    const flatBoard = board.filter((x): x is number => x !== null)
+    let inversions = 0
     
     for (let i = 0; i < flatBoard.length - 1; i++) {
       for (let j = i + 1; j < flatBoard.length; j++) {
-        if (flatBoard[i] > flatBoard[j]) {
-          inversions++;
-        }
+        if (flatBoard[i] > flatBoard[j]) inversions++
       }
     }
 
+    const emptyRowFromBottom = size - Math.floor(board.indexOf(null) / size)
+
     if (size % 2 === 0) {
-      const emptyRow = Math.floor(emptyPosition / size);
-      return (inversions + emptyRow) % 2 === 0;
+      return (inversions + emptyRowFromBottom) % 2 === 0
     }
     
-    return inversions % 2 === 0;
-  };
+    return inversions % 2 === 0
+  }
 
-  const handleMove = (index) => {
-    const emptyIndex = cells.indexOf('empty');
-    if (!isValidMove(index, emptyIndex)) return;
-
-    const newCells = [...cells];
-    [newCells[index], newCells[emptyIndex]] = [newCells[emptyIndex], newCells[index]];
-    setCells(newCells);
-    setMoveCount(prev => prev + 1);
-
-    if (isWin(newCells)) {
-      handleWin();
+  // Load best scores from localStorage
+  useEffect(() => {
+    const savedScores = localStorage.getItem('puzzleBestScores')
+    if (savedScores) {
+      setBestScores(JSON.parse(savedScores))
     }
-  };
+  }, [])
 
-  const isValidMove = (index, emptyIndex) => {
-    const row = Math.floor(index / gameLevel);
-    const col = index % gameLevel;
-    const emptyRow = Math.floor(emptyIndex / gameLevel);
-    const emptyCol = emptyIndex % gameLevel;
-
-    return (
-      (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
-      (Math.abs(col - emptyCol) === 1 && row === emptyRow)
-    );
-  };
-
-  const isWin = (currentCells) => {
-    return currentCells.slice(0, -1).every((cell, index) => cell === index + 1);
-  };
-
-  const handleWin = () => {
-    const currentBest = bestScores[gameLevel] || Infinity;
-    if (moveCount < currentBest) {
-      const newScores = { ...bestScores, [gameLevel]: moveCount };
-      setBestScores(newScores);
-      localStorage.setItem('puzzleBestScores', JSON.stringify(newScores));
-    }
-  };
+  // Initialize game when level changes
+  useEffect(() => {
+    initializeGame()
+  }, [gameLevel, initializeGame])
 
   return (
     <div className="flex flex-col items-center p-4">
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold mb-2">Sliding Puzzle</h2>
-        <div className="flex gap-2 mb-4">
-          <button 
-            onClick={initializeGame}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            New Game
-          </button>
-          <select 
-            value={gameLevel}
-            onChange={(e) => setGameLevel(Number(e.target.value))}
-            className="px-4 py-2 border rounded"
-          >
-            {[2,3,4,5,6].map(level => (
-              <option key={level} value={level}>{level}x{level}</option>
-            ))}
-          </select>
-        </div>
+      <GameLevelGrid 
+        onSelectLevel={level => {
+          setGameLevel(level)
+          initializeGame()
+        }}
+        currentLevel={gameLevel}
+      />
+
+      {/* Game Board */}
+      <div 
+        className="relative mt-8 bg-gray-100 rounded-lg"
+        style={{
+          width: '300px',
+          height: '300px'
+        }}
+      >
+        {cells.map((cell, index) => (
+          cell.value !== null && (
+            <button
+              key={cell.value}
+              onClick={() => handleCellClick(index)}
+              className={`
+                absolute transition-all duration-200 
+                bg-white border-2 border-blue-500 rounded-lg
+                flex items-center justify-center text-xl font-bold text-blue-500
+                hover:bg-blue-50 focus:outline-none
+                ${isValidMove(index) ? 'cursor-pointer' : 'cursor-not-allowed'}
+              `}
+              style={{
+                width: `${100/gameLevel}%`,
+                height: `${100/gameLevel}%`,
+                left: `${cell.position.col * (100/gameLevel)}%`,
+                top: `${cell.position.row * (100/gameLevel)}%`
+              }}
+              disabled={!isValidMove(index)}
+            >
+              {cell.value}
+            </button>
+          )
+        ))}
       </div>
 
-      <div className="relative w-64 h-64 bg-gray-100 rounded-lg p-2">
-        <div className="relative w-full h-full">
-          {cells.map((cell, index) => (
-            cell !== 'empty' && (
-              <button
-                key={cell}
-                onClick={() => handleMove(index)}
-                style={{
-                  position: 'absolute',
-                  width: `${100/gameLevel}%`,
-                  height: `${100/gameLevel}%`,
-                  left: `${(index % gameLevel) * (100/gameLevel)}%`,
-                  top: `${Math.floor(index / gameLevel) * (100/gameLevel)}%`,
-                  transition: 'all 0.2s',
-                }}
-                className="bg-blue-500 text-white rounded m-0.5 flex items-center justify-center hover:bg-blue-600"
-              >
-                {cell}
-              </button>
-            )
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4 text-center">
-        <p className="text-lg">Moves: {moveCount}</p>
-        <p className="text-sm">
+      {/* Game Stats */}
+      <div className="mt-6 text-center">
+        <p className="text-lg">Moves: {moves}</p>
+        <p className="text-sm text-gray-600">
           Best Score ({gameLevel}x{gameLevel}): {bestScores[gameLevel] || '-'}
         </p>
+        {isComplete && (
+          <div className="mt-4">
+            <p className="text-xl font-bold text-green-600">Puzzle Solved! 🎉</p>
+            <button
+              onClick={initializeGame}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Play Again
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SlidingPuzzle;
+export default SlidingPuzzle
