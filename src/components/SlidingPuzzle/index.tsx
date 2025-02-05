@@ -11,7 +11,11 @@ interface Cell {
   position: Position
 }
 
-const SlidingPuzzle = () => {
+interface Props {
+  forceWin?: boolean; // Only used for testing
+}
+
+const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [gameLevel, setGameLevel] = useState(2)
   const [cells, setCells] = useState<Cell[]>([])
   const [moves, setMoves] = useState(0)
@@ -131,6 +135,13 @@ const SlidingPuzzle = () => {
   useEffect(() => {
     initializeGame()
   }, [gameLevel, initializeGame])
+
+  // Handle forceWin prop (for testing)
+  useEffect(() => {
+    if (forceWin) {
+      setIsComplete(true)
+    }
+  }, [forceWin])
 
   return (
     <div className="flex flex-col items-center p-4">

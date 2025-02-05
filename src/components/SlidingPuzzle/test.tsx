@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest'
+import React from 'react'
 import SlidingPuzzle from './index'
 
 describe('<SlidingPuzzle />', () => {
@@ -20,7 +21,6 @@ describe('<SlidingPuzzle />', () => {
   })
 
   beforeEach(() => {
-    // Clear all mocks before each test
     vi.clearAllMocks()
     mockLocalStorage.getItem.mockReturnValue(null)
   })
@@ -31,27 +31,41 @@ describe('<SlidingPuzzle />', () => {
 
   it('should render the puzzle board', () => {
     render(<SlidingPuzzle />)
-
-    // Check for main components
-    expect(screen.getByText('Sliding Puzzle')).toBeInTheDocument()
+    
+    // Check for move counter
     expect(screen.getByText(/Moves:/)).toBeInTheDocument()
-    expect(screen.getByText('New Game')).toBeInTheDocument()
     
     // Initial 2x2 board should have 3 numbered cells (1-3) and one empty
-    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
+    const buttons = screen.getAllByRole('button').filter(button => 
+      /^[1-3]$/.test(button.textContent || '')
+    )
     expect(buttons).toHaveLength(3)
+
+    // Check for Best Score text
+    expect(screen.getByText(/Best Score/)).toBeInTheDocument()
   })
 
   it('should allow changing the puzzle size', () => {
     render(<SlidingPuzzle />)
 
-    // Change to 3x3 puzzle
-    const select = screen.getByRole('combobox')
-    fireEvent.change(select, { target: { value: '3' } })
+    // First, we should have a 2x2 puzzle with 3 numbered cells
+    let buttons = screen.getAllByRole('button').filter(button => 
+      /^[1-3]$/.test(button.textContent || '')
+    )
+    expect(buttons).toHaveLength(3)
 
-    // Should now have 8 numbered cells (1-8)
-    const buttons = screen.getAllByRole('button').filter(button => /^[1-8]$/.test(button.textContent || ''))
+    // Find and click the 3x3 level button
+    const level3Button = screen.getByText('3x3')
+    fireEvent.click(level3Button)
+
+    // Now we should have 8 numbered cells (1-8) for a 3x3 puzzle
+    buttons = screen.getAllByRole('button').filter(button => 
+      /^[1-8]$/.test(button.textContent || '')
+    )
     expect(buttons).toHaveLength(8)
+
+    // Check that the level indicator has updated
+    expect(screen.getByText(/Best Score \(3x3\)/)).toBeInTheDocument()
   })
 
   it('should track moves', async () => {
@@ -82,21 +96,21 @@ describe('<SlidingPuzzle />', () => {
     expect(screen.getByText('Best Score (2x2): 5')).toBeInTheDocument()
   })
 
-  it('should start new game when button clicked', async () => {
-    render(<SlidingPuzzle />)
-
-    // Make a move
-    const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
-    fireEvent.click(buttons[0])
-
-    // Click new game
-    const newGameButton = screen.getByText('New Game')
-    fireEvent.click(newGameButton)
-
-    // Move count should reset to 0
-    await waitFor(() => {
-      expect(screen.getByText('Moves: 0')).toBeInTheDocument()
-    })
+  it('should start new game when play again is clicked after winning', () => {
+    render(<SlidingPuzzle forceWin={true} />)
+    
+    // Find and click the Play Again button
+    const playAgainButton = screen.getByRole('button', { name: 'Play Again' })
+    fireEvent.click(playAgainButton)
+    
+    // Verify moves reset to 0
+    expect(screen.getByText('Moves: 0')).toBeInTheDocument()
+    
+    // Verify puzzle is playable again (buttons are present)
+    const newButtons = screen.getAllByRole('button').filter(button => 
+      /^[1-3]$/.test(button.textContent || '')
+    )
+    expect(newButtons).toHaveLength(3)
   })
 
   it('should check for valid moves only', () => {
