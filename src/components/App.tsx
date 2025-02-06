@@ -17,6 +17,30 @@ function App() {
   const [moves, setMoves] = useState(0)
   const [showInstructions, setShowInstructions] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [showGameControls, setShowGameControls] = useState(true)
+
+  const handleVictory = () => {
+    setShowGameControls(false)
+  }
+
+  const handleNextLevel = () => {
+    if (currentLevel < 9) {
+      setCurrentLevel(currentLevel + 1)
+      setMoves(0)
+      setShowGameControls(true)
+    }
+  }
+
+  const handleRetry = () => {
+    setMoves(0)
+    setShowGameControls(true)
+  }
+
+  const handleChooseLevel = () => {
+    setCurrentLevel(0)
+    setMoves(0)
+    setShowGameControls(true)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -26,14 +50,11 @@ function App() {
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">
             Sliding Puzzle Game
           </h1>
-          <p className="mt-2 text-lg text-gray-500">
-            A classic sliding puzzle game built with React and TypeScript
-          </p>
         </div>
 
         {/* Game Controls */}
         <div className="flex gap-4 mb-6">
-          {currentLevel === 0 ? (
+          {currentLevel === 0 || !showGameControls ? (
             <>
               <button 
                 className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
@@ -77,7 +98,7 @@ function App() {
               >
                 Solve
               </button>
-            </>
+              </>
           )}
         </div>
 
@@ -88,6 +109,7 @@ function App() {
               onSelectLevel={(level) => {
                 setCurrentLevel(level)
                 setMoves(0)
+                setShowGameControls(true)
               }} 
               currentLevel={currentLevel}
             />
@@ -96,6 +118,10 @@ function App() {
               size={currentLevel} 
               moves={moves}
               onMove={() => setMoves(m => m + 1)}
+              onVictory={handleVictory}
+              onNextLevel={handleNextLevel}
+              onRetry={handleRetry}
+              onChooseLevel={handleChooseLevel}
             />
           )}
         </div>

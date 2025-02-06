@@ -1,14 +1,28 @@
 // src/components/GameBoard/index.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface GameBoardProps {
   size: number
   moves: number
   onMove: () => void
+  onVictory: () => void
+  onNextLevel: () => void
+  onRetry: () => void
+  onChooseLevel: () => void
 }
 
-export function GameBoard({ size, moves, onMove }: GameBoardProps) {
+export function GameBoard({ 
+  size, 
+  moves, 
+  onMove, 
+  onVictory,
+  onNextLevel,
+  onRetry,
+  onChooseLevel 
+}: GameBoardProps) {
   const [tiles, setTiles] = useState<(number | null)[]>([])
+  const [isVictory, setIsVictory] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Check if the puzzle is solvable
   const isSolvable = (board: (number | null)[]): boolean => {
@@ -30,18 +44,31 @@ export function GameBoard({ size, moves, onMove }: GameBoardProps) {
     return inversions % 2 === 0
   }
 
+  // Initialize or reset the game board
   useEffect(() => {
     const generateBoard = () => {
       const numbers = Array.from({ length: size * size - 1 }, (_, i) => i + 1)
       let board
       do {
         board = [...numbers, null].sort(() => Math.random() - 0.5)
-      } while (!isSolvable(board))
+      } while (!isSolvable(board) || isInWinningState(board))  // Add check to prevent winning state
       return board
     }
+    
     setTiles(generateBoard())
+    setIsVictory(false)
+    setIsInitialized(true)
   }, [size])
 
+  // Helper function to check if board is in winning state
+  const isInWinningState = (board: (number | null)[]) => {
+    return board.every((tile, index) => {
+      if (index === board.length - 1) return tile === null;
+      return tile === index + 1;
+    });
+  }
+
+  // Check if a move is valid
   const isValidMove = (index: number): boolean => {
     const emptyIndex = tiles.indexOf(null)
     if (index === emptyIndex) return false
@@ -57,6 +84,29 @@ export function GameBoard({ size, moves, onMove }: GameBoardProps) {
     )
   }
 
+  // Check for win condition
+  const checkWin = useCallback(() => {
+    if (!isInitialized) return false;
+    return tiles.every((tile, index) => {
+      if (index === tiles.length - 1) return tile === null;
+      return tile === index + 1;
+    });
+  }, [tiles, isInitialized]);
+
+  // Handle victory state
+  const handleVictory = useCallback(() => {
+    setIsVictory(true)
+    onVictory()
+  }, [onVictory])
+
+  // Check for win after each move
+  useEffect(() => {
+    if (isInitialized && checkWin() && !isVictory) {
+      handleVictory()
+    }
+  }, [checkWin, isVictory, handleVictory, isInitialized])
+
+  // Handle tile click
   const handleTileClick = (index: number) => {
     if (!isValidMove(index)) return
     
@@ -71,6 +121,45 @@ export function GameBoard({ size, moves, onMove }: GameBoardProps) {
     onMove()
   }
 
+  // Render victory screen
+  if (isVictory) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className="mb-8">
+          <div className="text-4xl font-bold text-blue-500 mb-2">Solved!</div>
+          <div className="text-2xl">Your result: {moves}</div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 w-full max-w-md">
+          <button
+            onClick={onChooseLevel}
+            className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+          >
+            <span className="text-xl mb-2">Choose level</span>
+            <span className="text-4xl">✸</span>
+          </button>
+          
+          <button
+            onClick={onRetry}
+            className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+          >
+            <span className="text-xl mb-2">Retry again</span>
+            <span className="text-4xl">↺</span>
+          </button>
+          
+          <button
+            onClick={onNextLevel}
+            className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+          >
+            <span className="text-xl mb-2">Next level</span>
+            <span className="text-4xl">▶</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Render game board
   return (
     <div 
       className="grid gap-0.5 p-0.5 h-full"
@@ -90,6 +179,7 @@ export function GameBoard({ size, moves, onMove }: GameBoardProps) {
             }
             ${isValidMove(index) ? 'cursor-pointer' : 'cursor-not-allowed'}
           `}
+          disabled={!isValidMove(index)}
         >
           {number}
         </button>

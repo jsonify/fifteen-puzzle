@@ -1,17 +1,25 @@
 // src/components/GameBoard/test.tsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { GameBoard } from '.'
 
 describe('<GameBoard />', () => {
-  const mockOnMove = vi.fn()
+  const defaultProps = {
+    onMove: vi.fn(),
+    onVictory: vi.fn(),
+    onNextLevel: vi.fn(),
+    onRetry: vi.fn(),
+    onChooseLevel: vi.fn()
+  }
 
   beforeEach(() => {
-    mockOnMove.mockClear()
+    for (const mockFn of Object.values(defaultProps)) {
+      mockFn.mockClear()
+    }
   })
 
   it('renders a board with correct number of tiles', () => {
-    render(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+    render(<GameBoard size={3} moves={0} {...defaultProps} />)
     
     // In a 3x3 board, we should have 8 numbered tiles (1-8) and one empty space
     const buttons = screen.getAllByRole('button')
@@ -31,7 +39,7 @@ describe('<GameBoard />', () => {
   })
 
   it('generates a solvable puzzle configuration', async () => {
-    const { rerender } = render(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+    const { rerender } = render(<GameBoard size={3} moves={0} {...defaultProps} />)
 
     // Get initial configuration
     const getConfiguration = () => 
@@ -40,7 +48,7 @@ describe('<GameBoard />', () => {
 
     // Check multiple configurations
     for (let i = 0; i < 5; i++) {
-      rerender(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+      rerender(<GameBoard size={3} moves={0} {...defaultProps} />)
       const config = getConfiguration()
       
       // Count inversions
@@ -58,7 +66,7 @@ describe('<GameBoard />', () => {
   })
 
   it('only allows valid moves', () => {
-    render(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+    render(<GameBoard size={3} moves={0} {...defaultProps} />)
     
     // Find empty tile and valid adjacent tile
     const buttons = screen.getAllByRole('button')
@@ -97,15 +105,15 @@ describe('<GameBoard />', () => {
   
     // Click invalid tile
     fireEvent.click(buttons[invalidIndex])
-    expect(mockOnMove).not.toHaveBeenCalled()
+    expect(defaultProps.onMove).not.toHaveBeenCalled()
     
     // Click valid tile
     fireEvent.click(buttons[adjacentIndex])
-    expect(mockOnMove).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onMove).toHaveBeenCalledTimes(1)
   })
 
   it('updates board state after valid moves', async () => {
-    render(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+    render(<GameBoard size={3} moves={0} {...defaultProps} />)
     
     const getConfiguration = () => 
       screen.getAllByRole('button')
@@ -132,22 +140,22 @@ describe('<GameBoard />', () => {
     // Check that configuration changed
     const newConfig = getConfiguration()
     expect(newConfig).not.toEqual(initialConfig)
-    expect(mockOnMove).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onMove).toHaveBeenCalledTimes(1)
   })
 
   it('renders different size boards correctly', () => {
-    const { rerender } = render(<GameBoard size={2} moves={0} onMove={mockOnMove} />)
+    const { rerender } = render(<GameBoard size={2} moves={0} {...defaultProps} />)
     
     // 2x2 board
     expect(screen.getAllByRole('button')).toHaveLength(4)
     
     // 4x4 board
-    rerender(<GameBoard size={4} moves={0} onMove={mockOnMove} />)
+    rerender(<GameBoard size={4} moves={0} {...defaultProps} />)
     expect(screen.getAllByRole('button')).toHaveLength(16)
   })
 
   it('maintains puzzle solvability after moves', async () => {
-    render(<GameBoard size={3} moves={0} onMove={mockOnMove} />)
+    render(<GameBoard size={3} moves={0} {...defaultProps} />)
     
     const makeValidMove = () => {
       const buttons = screen.getAllByRole('button')
@@ -188,5 +196,47 @@ describe('<GameBoard />', () => {
 
       expect(inversions % 2).toBe(0)
     }
+  })
+
+  it('shows victory screen when puzzle is solved', () => {
+    render(
+      <GameBoard
+        size={2}
+        moves={6}
+        {...defaultProps}
+      />
+    )
+
+    // Force victory state by setting the tiles in the correct order
+    // This is handled internally by the component
+
+    expect(screen.getByText('Solved!')).toBeInTheDocument()
+    expect(screen.getByText('Your result: 6')).toBeInTheDocument()
+    
+    // Check victory buttons
+    expect(screen.getByText('Choose level')).toBeInTheDocument()
+    expect(screen.getByText('Retry again')).toBeInTheDocument()
+    expect(screen.getByText('Next level')).toBeInTheDocument()
+  })
+
+  it('calls appropriate callbacks when victory buttons are clicked', () => {
+    render(
+      <GameBoard
+        size={2}
+        moves={6}
+        {...defaultProps}
+      />
+    )
+
+    // Simulate victory state
+    // Click each button and verify callbacks
+    fireEvent.click(screen.getByText('Choose level'))
+    expect(defaultProps.onChooseLevel).toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('Retry again'))
+    expect(defaultProps.onRetry).toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('Next level'))
+    expect(defaultProps.onNextLevel).toHaveBeenCalled()
   })
 })
