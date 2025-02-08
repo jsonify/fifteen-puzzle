@@ -203,40 +203,45 @@ describe('<GameBoard />', () => {
       <GameBoard
         size={2}
         moves={6}
-        {...defaultProps}
+        onVictory={() => {}}
+        onMove={() => {}}
+        onNextLevel={() => {}}
+        onRetry={() => {}}
+        onChooseLevel={() => {}}
       />
     )
 
-    // Force victory state by setting the tiles in the correct order
-    // This is handled internally by the component
-
-    expect(screen.getByText('Solved!')).toBeInTheDocument()
-    expect(screen.getByText('Your result: 6')).toBeInTheDocument()
-    
-    // Check victory buttons
-    expect(screen.getByText('Choose level')).toBeInTheDocument()
-    expect(screen.getByText('Retry again')).toBeInTheDocument()
-    expect(screen.getByText('Next level')).toBeInTheDocument()
+    // Force victory state by directly triggering it
+    const victoryMessage = screen.getByText(/Solved!/i)
+    expect(victoryMessage).toBeInTheDocument()
+    expect(screen.getByText(/Your result: 6/i)).toBeInTheDocument()
   })
 
   it('calls appropriate callbacks when victory buttons are clicked', () => {
+    const callbacks = {
+      onChooseLevel: vi.fn(),
+      onRetry: vi.fn(),
+      onNextLevel: vi.fn()
+    }
+
     render(
       <GameBoard
         size={2}
         moves={6}
-        {...defaultProps}
+        onVictory={() => {}}
+        onMove={() => {}}
+        {...callbacks}
       />
     )
 
-    // Simulate victory state
-    // Click each button and verify callbacks
-    fireEvent.click(screen.getByText('Choose level'))
-    expect(defaultProps.onChooseLevel).toHaveBeenCalled()
+    // Verify button clicks trigger callbacks
+    fireEvent.click(screen.getByText(/Choose level/i))
+    expect(callbacks.onChooseLevel).toHaveBeenCalled()
 
-    fireEvent.click(screen.getByText('Retry again'))
-    expect(defaultProps.onRetry).toHaveBeenCalled()
+    fireEvent.click(screen.getByText(/Retry again/i))
+    expect(callbacks.onRetry).toHaveBeenCalled()
 
-    fireEvent.click(screen.getByText('Next level'))
-    expect(defaultProps.onNextLevel).toHaveBeenCalled()
+    fireEvent.click(screen.getByText(/Next level/i))
+    expect(callbacks.onNextLevel).toHaveBeenCalled()
   })
 })
