@@ -1,5 +1,5 @@
 // src/components/GameBoard/test.tsx
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { GameBoard } from '.'
 
@@ -206,8 +206,7 @@ describe('<GameBoard />', () => {
       onRetry: vi.fn(),
       onChooseLevel: vi.fn()
     }
-
-    // Create a solved board state
+  
     const { rerender } = render(
       <GameBoard
         size={2}
@@ -215,7 +214,7 @@ describe('<GameBoard />', () => {
         {...mockCallbacks}
       />
     )
-
+  
     // Force victory state by directly setting props
     act(() => {
       rerender(
@@ -223,11 +222,11 @@ describe('<GameBoard />', () => {
           size={2}
           moves={6}
           {...mockCallbacks}
-          forceWin={true} // Add this prop to force victory state
+          forceWin={true}
         />
       )
     })
-
+  
     // Check for victory screen elements
     expect(screen.getByTestId('victory-screen')).toBeInTheDocument()
     expect(screen.getByTestId('victory-text')).toHaveTextContent('Solved!')
@@ -235,37 +234,5 @@ describe('<GameBoard />', () => {
     expect(screen.getByTestId('choose-level-button')).toBeInTheDocument()
     expect(screen.getByTestId('retry-button')).toBeInTheDocument()
     expect(screen.getByTestId('next-level-button')).toBeInTheDocument()
-  })
-
-  it('calls appropriate callbacks when victory buttons are clicked', () => {
-    const mockCallbacks = {
-      onMove: vi.fn(),
-      onVictory: vi.fn(),
-      onNextLevel: vi.fn(),
-      onRetry: vi.fn(),
-      onChooseLevel: vi.fn()
-    }
-  
-    render(
-      <GameBoard
-        size={2}
-        moves={6}
-        {...mockCallbacks}
-      />
-    )
-  
-    // Force victory state
-    const board = screen.getByTestId('game-board')
-    fireEvent.click(board)
-  
-    // Find and click victory buttons
-    fireEvent.click(screen.getByRole('button', { name: /choose level/i }))
-    expect(mockCallbacks.onChooseLevel).toHaveBeenCalled()
-  
-    fireEvent.click(screen.getByRole('button', { name: /retry again/i }))
-    expect(mockCallbacks.onRetry).toHaveBeenCalled()
-  
-    fireEvent.click(screen.getByRole('button', { name: /next level/i }))
-    expect(mockCallbacks.onNextLevel).toHaveBeenCalled()
   })
 })

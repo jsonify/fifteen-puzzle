@@ -29,6 +29,7 @@ export function GameBoard({
   // Force victory state for testing
   useEffect(() => {
     if (forceWin) {
+      console.log('Setting victory state from forceWin prop');
       setIsVictory(true)
       onVictory()
     }
@@ -106,6 +107,7 @@ export function GameBoard({
   // Handle victory state
   const handleVictory = useCallback(() => {
     setIsVictory(true)
+    console.log('Victory state:', isVictory);
     onVictory()
   }, [onVictory])
 
@@ -133,6 +135,7 @@ export function GameBoard({
 
   // Render victory screen
   if (isVictory) {
+    console.log('Rendering victory screen');
     return (
       <div className="flex flex-col items-center justify-center h-full text-center" data-testid="victory-screen">
         <div className="mb-8">
