@@ -12,7 +12,9 @@ describe('Leaderboard', () => {
 
   it('renders empty state correctly', () => {
     render(<Leaderboard open={true} onOpenChange={() => {}} />)
-    expect(screen.getByText('No scores recorded yet')).toBeInTheDocument()
+    
+    const emptyState = screen.getByTestId('empty-state')
+    expect(emptyState).toHaveTextContent('No scores recorded yet')
   })
 
   it('displays leaderboard entries correctly', () => {
@@ -30,13 +32,15 @@ describe('Leaderboard', () => {
     expect(screen.getByText('Player 2')).toBeInTheDocument()
   })
 
-  it('closes when clicking outside', () => {
+  it('closes when clicking outside', async () => {
     const onOpenChange = vi.fn()
     render(<Leaderboard open={true} onOpenChange={onOpenChange} />)
 
-    // Click the backdrop
-    const backdrop = document.querySelector('[data-backdrop]')
-    fireEvent.click(backdrop!)
+    // Find the close button instead of the overlay
+    const closeButton = screen.getByRole('button', { name: /close/i })
+    expect(closeButton).toBeInTheDocument()
+    
+    fireEvent.click(closeButton)
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
