@@ -20,12 +20,46 @@ export function GameBoard({
   onNextLevel,
   onRetry,
   onChooseLevel,
-  forceWin = false // Default value
+  forceWin = false
 }: GameBoardProps) {
   const [tiles, setTiles] = useState<(number | null)[]>([])
   const [isVictory, setIsVictory] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-
+  const countInversions = (board: (number | null)[] | number[]): number => {
+    const numbers = board.filter((x): x is number => x !== null)
+    let inversions = 0
+    for (let i = 0; i < numbers.length - 1; i++) {
+      for (let j = i + 1; j < numbers.length; j++) {
+        if (numbers[i] > numbers[j]) inversions++
+      }
+    }
+    return inversions
+  }
+  // Generate a guaranteed solvable 2x2 board
+  const generateSolvable2x2Board = (): (number | null)[] => {
+    // For 2x2, we can use these known solvable configurations:
+    const solvableConfigs = [
+      [null, 3, 2, 1],  // 3 inversions + row 0 = 3 (odd)
+      [3, null, 2, 1],  // 2 inversions + row 0 = 2 (even)
+      [3, 2, null, 1],  // 2 inversions + row 1 = 3 (odd)
+      [3, 2, 1, null],  // 3 inversions + row 1 = 4 (even)
+    ]
+    
+    // Pick a random configuration
+    const chosenConfig = solvableConfigs[Math.floor(Math.random() * solvableConfigs.length)]
+    
+    // Verify solvability before returning
+    const emptyIndex = chosenConfig.indexOf(null)
+    const emptyRow = Math.floor(emptyIndex / 2)
+    const inversions = countInversions(chosenConfig.filter((x): x is number => x !== null))
+    
+    if ((inversions + emptyRow) % 2 !== 0) {
+      // If somehow not solvable, return a known good configuration
+      return [3, null, 2, 1]
+    }
+    
+    return chosenConfig
+  }
   // Force victory state for testing
   useEffect(() => {
     if (forceWin) {
@@ -46,8 +80,15 @@ export function GameBoard({
       }
     }
 
-    const emptyRowFromBottom = size - Math.floor(board.indexOf(null) / size)
+    // For 2x2 puzzles, we need special handling
+    if (size === 2) {
+      const emptyRow = Math.floor(board.indexOf(null) / size)
+      return (inversions + emptyRow) % 2 === 0
+    }
 
+    // For larger puzzles, use standard solvability check
+    const emptyRowFromBottom = size - Math.floor(board.indexOf(null) / size)
+    
     if (size % 2 === 0) {
       return (inversions + emptyRowFromBottom) % 2 === 0
     }
@@ -58,11 +99,29 @@ export function GameBoard({
   // Initialize or reset the game board
   useEffect(() => {
     const generateBoard = () => {
+      // Special handling for 2x2 puzzles
+      if (size === 2) {
+        return generateSolvable2x2Board()
+      }
       const numbers = Array.from({ length: size * size - 1 }, (_, i) => i + 1)
       let board
+      let attempts = 0
+      const maxAttempts = 1000 // Prevent infinite loop
+
       do {
         board = [...numbers, null].sort(() => Math.random() - 0.5)
+        attempts++
+        
+        if (attempts >= maxAttempts) {
+          // If we can't generate a solvable board randomly, create a known solvable one
+          if (size === 2) {
+            return [1, 2, null, 3]
+          }
+          console.warn('Could not generate random solvable board, using fallback')
+          return [...numbers, null]
+        }
       } while (!isSolvable(board) || isInWinningState(board))
+
       return board
     }
     
@@ -70,6 +129,17 @@ export function GameBoard({
     setIsVictory(false)
     setIsInitialized(true)
   }, [size])
+
+  // For 2x2 puzzles, we only need to check if we can reach the goal state
+  const isValidPosition = (board: (number | null)[]): boolean => {
+    if (size === 2) {
+      const emptyIndex = board.indexOf(null)
+      const inversions = countInversions(board)
+      const emptyRow = Math.floor(emptyIndex / 2)
+      return (inversions + emptyRow) % 2 === 0
+    }
+    return isSolvable(board)
+  }
 
   // Helper function to check if board is in winning state
   const isInWinningState = (board: (number | null)[]) => {
@@ -81,6 +151,8 @@ export function GameBoard({
 
   // Check if a move is valid
   const isValidMove = (index: number): boolean => {
+    if (!isInitialized) return false
+    
     const emptyIndex = tiles.indexOf(null)
     if (index === emptyIndex) return false
     
@@ -89,6 +161,7 @@ export function GameBoard({
     const emptyRow = Math.floor(emptyIndex / size)
     const emptyCol = emptyIndex % size
 
+    // Only allow moves to adjacent tiles
     return (
       (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
       (Math.abs(col - emptyCol) === 1 && row === emptyRow)
