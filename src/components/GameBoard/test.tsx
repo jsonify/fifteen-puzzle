@@ -198,45 +198,74 @@ describe('<GameBoard />', () => {
     }
   })
 
-  it('shows victory screen when puzzle is solved', () => {
-    render(
+  it('shows victory screen when puzzle is solved', async () => {
+    const mockCallbacks = {
+      onMove: vi.fn(),
+      onVictory: vi.fn(),
+      onNextLevel: vi.fn(),
+      onRetry: vi.fn(),
+      onChooseLevel: vi.fn()
+    }
+
+    // Create a solved board state
+    const { rerender } = render(
       <GameBoard
         size={2}
         moves={6}
-        {...defaultProps}
+        {...mockCallbacks}
       />
     )
 
-    // Force victory state by setting the tiles in the correct order
-    // This is handled internally by the component
+    // Force victory state by directly setting props
+    act(() => {
+      rerender(
+        <GameBoard
+          size={2}
+          moves={6}
+          {...mockCallbacks}
+          forceWin={true} // Add this prop to force victory state
+        />
+      )
+    })
 
-    expect(screen.getByText('Solved!')).toBeInTheDocument()
-    expect(screen.getByText('Your result: 6')).toBeInTheDocument()
-    
-    // Check victory buttons
-    expect(screen.getByText('Choose level')).toBeInTheDocument()
-    expect(screen.getByText('Retry again')).toBeInTheDocument()
-    expect(screen.getByText('Next level')).toBeInTheDocument()
+    // Check for victory screen elements
+    expect(screen.getByTestId('victory-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('victory-text')).toHaveTextContent('Solved!')
+    expect(screen.getByText(/Your result: 6/)).toBeInTheDocument()
+    expect(screen.getByTestId('choose-level-button')).toBeInTheDocument()
+    expect(screen.getByTestId('retry-button')).toBeInTheDocument()
+    expect(screen.getByTestId('next-level-button')).toBeInTheDocument()
   })
 
   it('calls appropriate callbacks when victory buttons are clicked', () => {
+    const mockCallbacks = {
+      onMove: vi.fn(),
+      onVictory: vi.fn(),
+      onNextLevel: vi.fn(),
+      onRetry: vi.fn(),
+      onChooseLevel: vi.fn()
+    }
+  
     render(
       <GameBoard
         size={2}
         moves={6}
-        {...defaultProps}
+        {...mockCallbacks}
       />
     )
-
-    // Simulate victory state
-    // Click each button and verify callbacks
-    fireEvent.click(screen.getByText('Choose level'))
-    expect(defaultProps.onChooseLevel).toHaveBeenCalled()
-
-    fireEvent.click(screen.getByText('Retry again'))
-    expect(defaultProps.onRetry).toHaveBeenCalled()
-
-    fireEvent.click(screen.getByText('Next level'))
-    expect(defaultProps.onNextLevel).toHaveBeenCalled()
+  
+    // Force victory state
+    const board = screen.getByTestId('game-board')
+    fireEvent.click(board)
+  
+    // Find and click victory buttons
+    fireEvent.click(screen.getByRole('button', { name: /choose level/i }))
+    expect(mockCallbacks.onChooseLevel).toHaveBeenCalled()
+  
+    fireEvent.click(screen.getByRole('button', { name: /retry again/i }))
+    expect(mockCallbacks.onRetry).toHaveBeenCalled()
+  
+    fireEvent.click(screen.getByRole('button', { name: /next level/i }))
+    expect(mockCallbacks.onNextLevel).toHaveBeenCalled()
   })
 })
