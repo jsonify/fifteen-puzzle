@@ -9,6 +9,7 @@ interface GameBoardProps {
   onNextLevel: () => void
   onRetry: () => void
   onChooseLevel: () => void
+  forceWin?: boolean // Prop for testing
 }
 
 export function GameBoard({ 
@@ -18,11 +19,21 @@ export function GameBoard({
   onVictory,
   onNextLevel,
   onRetry,
-  onChooseLevel 
+  onChooseLevel,
+  forceWin = false // Default value
 }: GameBoardProps) {
   const [tiles, setTiles] = useState<(number | null)[]>([])
   const [isVictory, setIsVictory] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+
+  // Force victory state for testing
+  useEffect(() => {
+    if (forceWin) {
+      console.log('Setting victory state from forceWin prop');
+      setIsVictory(true)
+      onVictory()
+    }
+  }, [forceWin, onVictory])
 
   // Check if the puzzle is solvable
   const isSolvable = (board: (number | null)[]): boolean => {
@@ -51,7 +62,7 @@ export function GameBoard({
       let board
       do {
         board = [...numbers, null].sort(() => Math.random() - 0.5)
-      } while (!isSolvable(board) || isInWinningState(board))  // Add check to prevent winning state
+      } while (!isSolvable(board) || isInWinningState(board))
       return board
     }
     
@@ -96,6 +107,7 @@ export function GameBoard({
   // Handle victory state
   const handleVictory = useCallback(() => {
     setIsVictory(true)
+    console.log('Victory state:', isVictory);
     onVictory()
   }, [onVictory])
 
@@ -123,10 +135,11 @@ export function GameBoard({
 
   // Render victory screen
   if (isVictory) {
+    console.log('Rendering victory screen');
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
+      <div className="flex flex-col items-center justify-center h-full text-center" data-testid="victory-screen">
         <div className="mb-8">
-          <div className="text-4xl font-bold text-blue-500 mb-2">Solved!</div>
+          <div className="text-4xl font-bold text-blue-500 mb-2" data-testid="victory-text">Solved!</div>
           <div className="text-2xl">Your result: {moves}</div>
         </div>
         
@@ -134,6 +147,7 @@ export function GameBoard({
           <button
             onClick={onChooseLevel}
             className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+            data-testid="choose-level-button"
           >
             <span className="text-xl mb-2">Choose level</span>
             <span className="text-4xl">✸</span>
@@ -142,6 +156,7 @@ export function GameBoard({
           <button
             onClick={onRetry}
             className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+            data-testid="retry-button"
           >
             <span className="text-xl mb-2">Retry again</span>
             <span className="text-4xl">↺</span>
@@ -150,6 +165,7 @@ export function GameBoard({
           <button
             onClick={onNextLevel}
             className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
+            data-testid="next-level-button"
           >
             <span className="text-xl mb-2">Next level</span>
             <span className="text-4xl">▶</span>
@@ -164,6 +180,7 @@ export function GameBoard({
     <div 
       className="grid gap-0.5 p-0.5 h-full"
       style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+      data-testid="game-board"
     >
       {tiles.map((number, index) => (
         <button
