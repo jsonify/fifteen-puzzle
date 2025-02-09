@@ -1,5 +1,5 @@
 // src/components/GameBoard/index.tsx
-import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle, forwardRef, useRef } from 'react';
 import { NPuzzleSolver } from '@/lib/NPuzzleSolver';
 
 interface GameBoardProps {
@@ -23,6 +23,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   onChooseLevel,
   forceWin = false
 }, ref) => {
+  const isMounted = useRef(true);
   const [tiles, setTiles] = useState<(number | null)[]>([]);
   const [isVictory, setIsVictory] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -37,6 +38,12 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
     }
     return inversions;
   };
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const generateSolvable2x2Board = (): (number | null)[] => {
     const solvableConfigs = [
@@ -191,32 +198,55 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   };
 
   const solve = useCallback(() => {
-    const gridSize = Math.sqrt(tiles.length);
-    const grid: (number | null)[][] = [];
-    for (let i = 0; i < gridSize; i++) {
-      grid[i] = tiles.slice(i * gridSize, (i + 1) * gridSize);
-    }
-
-    const solver = new NPuzzleSolver(grid);
-    const solution = solver.solve();
-
-    if (solution) {
+    // Add a solving state to prevent multiple solves
+    if (isVictory) return;
+    
+    try {
+      const gridSize = Math.sqrt(tiles.length);
+      const grid: (number | null)[][] = [];
+      for (let i = 0; i < gridSize; i++) {
+        grid[i] = tiles.slice(i * gridSize, (i + 1) * gridSize);
+      }
+  
+      const solver = new NPuzzleSolver(grid);
+      const solution = solver.solve();
+  
+      if (!solution) {
+        console.error('No solution found');
+        return;
+      }
+  
       let moveIndex = 0;
       const animateMove = () => {
-        if (moveIndex < solution.length) {
-          const move = solution[moveIndex];
-          const index = move.piece.y * gridSize + move.piece.x;
-          handleTileClick(index);
-          moveIndex++;
-          setTimeout(animateMove, 200);
-        } else {
+        if (moveIndex >= solution.length) {
           setIsVictory(true);
           onVictory();
+          return;
         }
+  
+        const move = solution[moveIndex];
+        setTiles(prevTiles => {
+          const newTiles = [...prevTiles];
+          const currentIndex = move.piece.y * gridSize + move.piece.x;
+          const emptyIndex = newTiles.indexOf(null);
+          
+          if (emptyIndex === -1) return prevTiles;
+          
+          newTiles[emptyIndex] = newTiles[currentIndex];
+          newTiles[currentIndex] = null;
+          return newTiles;
+        });
+        
+        onMove();
+        moveIndex++;
+        setTimeout(animateMove, 200);
       };
+  
       animateMove();
+    } catch (error) {
+      console.error('Error during solve:', error);
     }
-  }, [tiles, onVictory]);
+  }, [tiles, onMove, onVictory, isVictory]);
 
   useImperativeHandle(ref, () => ({
     solve

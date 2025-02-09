@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { GameBoard } from '../GameBoard'
 import GameLevelGrid from '../GameLevelGrid'
 import { Leaderboard } from '../Leaderboard'
@@ -23,6 +23,7 @@ function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [showGameControls, setShowGameControls] = useState(true)
   const [showSolveConfirm, setShowSolveConfirm] = useState(false)
+  const [isSolving, setIsSolving] = useState(false);
   const leaderboardManager = new LeaderboardManager()
   const gameBoardRef = useRef<{ solve: () => void }>(null)
 
@@ -45,12 +46,20 @@ function App() {
     setMoves(0)
   }
 
-  const handleSolveConfirm = () => {
-    setShowSolveConfirm(false)
-    if (gameBoardRef.current) {
-      gameBoardRef.current.solve()
-    }
-  }
+  const handleSolveConfirm = useCallback(() => {
+    if (isSolving) return; // Prevent multiple solves
+    
+    setIsSolving(true);
+    setShowSolveConfirm(false);
+
+    // Ensure we're not in a race condition
+    setTimeout(() => {
+      if (gameBoardRef.current) {
+        gameBoardRef.current.solve();
+      }
+      setIsSolving(false);
+    }, 100);
+  }, [isSolving]);
 
   return (
     <>
@@ -117,8 +126,12 @@ function App() {
       />
 
       <SolveConfirmDialog
-        open={showSolveConfirm}
-        onOpenChange={setShowSolveConfirm}
+        open={showSolveConfirm && !isSolving}
+        onOpenChange={(open) => {
+          if (!isSolving) {
+            setShowSolveConfirm(open);
+          }
+        }}
         onConfirm={handleSolveConfirm}
       />
 
