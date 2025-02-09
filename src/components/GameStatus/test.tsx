@@ -14,7 +14,7 @@ describe('<GameStatus />', () => {
     render(<GameStatus {...defaultProps} />)
     
     expect(screen.getByTestId('game-stats')).toBeInTheDocument()
-    expect(screen.getByTestId('moves-count')).toHaveTextContent('10')
+    expect(screen.getByTestId('moves-display')).toHaveTextContent('10')
     expect(screen.getByText('Best Score (3x3): -')).toBeInTheDocument()
   })
 
@@ -33,11 +33,11 @@ describe('<GameStatus />', () => {
   it('should update moves display when moves prop changes', () => {
     const { rerender } = render(<GameStatus {...defaultProps} />)
     
-    expect(screen.getByTestId('moves-count')).toHaveTextContent('10')
+    expect(screen.getByTestId('moves-display')).toHaveTextContent('10')
     
     rerender(<GameStatus {...defaultProps} moves={15} />)
     
-    expect(screen.getByTestId('moves-count')).toHaveTextContent('15')
+    expect(screen.getByTestId('moves-display')).toHaveTextContent('15')
   })
 
   it('should display correct level in best score text', () => {
