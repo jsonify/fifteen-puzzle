@@ -100,7 +100,8 @@ describe('<SlidingPuzzle />', () => {
     await waitFor(() => {
       const moves = screen.getByTestId('moves-counter')
       expect(moves).toBeInTheDocument()
-      expect(moves.textContent).not.toContain('Moves: 0')
+      const moveCount = parseInt(moves.textContent?.replace('Moves: ', '') || '0')
+      expect(moveCount).toBeGreaterThan(0)
     })
   })
 
