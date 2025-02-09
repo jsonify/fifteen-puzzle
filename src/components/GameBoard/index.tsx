@@ -57,7 +57,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
     
     return chosenConfig;
   };
-
+                                         
   useEffect(() => {
     if (forceWin) {
       setIsVictory(true);
@@ -75,12 +75,14 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
       }
     }
 
+
     if (size === 2) {
       const emptyRow = Math.floor(board.indexOf(null) / size);
       return (inversions + emptyRow) % 2 === 0;
     }
 
     const emptyRowFromBottom = size - Math.floor(board.indexOf(null) / size);
+
     
     if (size % 2 === 0) {
       return (inversions + emptyRowFromBottom) % 2 === 0;
@@ -91,6 +93,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
 
   useEffect(() => {
     const generateBoard = () => {
+
       if (size === 2) {
         return generateSolvable2x2Board();
       }
@@ -148,6 +151,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
     const emptyRow = Math.floor(emptyIndex / size);
     const emptyCol = emptyIndex % size;
 
+    // Only allow moves to adjacent tiles
     return (
       (Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
       (Math.abs(col - emptyCol) === 1 && row === emptyRow)
