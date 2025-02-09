@@ -27,6 +27,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [showHighScoreDialog, setShowHighScoreDialog] = useState(false)
   const [bestScores, setBestScores] = useState<Record<number, number>>({})
   const [solving, setSolving] = useState(false)
+  const [solveQueue, setSolveQueue] = useState<number[]>([])
 
   // Check if a move is valid
   const isValidMove = (index: number): boolean => {
@@ -50,7 +51,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
 
   // Handle cell click
   const handleCellClick = (index: number) => {
-    if (isComplete || !isValidMove(index) || solving) return
+    if (isComplete || !isValidMove(index) || solving || solveQueue.length > 0) return
 
     const newCells = [...cells]
     const emptyIndex = cells.findIndex(cell => cell.value === null)
@@ -65,7 +66,11 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
 
     // Check for win condition after animation completes
     setTimeout(() => {
-      if (checkWin()) {
+      if (solveQueue.length > 0) {
+        const nextMove = solveQueue[0]
+        setSolveQueue(prev => prev.slice(1))
+        handleCellClick(nextMove)
+      } else if (checkWin()) {
         handleWin()
       }
     }, 200) // Match the duration-200 from the transition class
