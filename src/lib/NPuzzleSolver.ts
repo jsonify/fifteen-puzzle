@@ -12,6 +12,38 @@ export class NPuzzleSolver {
       this.numbers = {};
       this.solution = [];
       this.originalGrid = toSolve;
+    
+      if (!this.isSolvable(toSolve)) {
+        throw new Error("Puzzle configuration is not solvable");
+      }
+    }
+
+    private isSolvable(grid: (number | null)[][]): boolean {
+      const size = grid.length;
+      const flatGrid = grid.flat();
+      let inversions = 0;
+      let emptyRow = 0;
+
+      // Find empty tile row from bottom and count inversions
+      for (let i = 0; i < flatGrid.length; i++) {
+        if (flatGrid[i] === null) {
+          emptyRow = Math.floor((flatGrid.length - 1 - i) / size);
+          continue;
+        }
+        for (let j = i + 1; j < flatGrid.length; j++) {
+          if (flatGrid[j] !== null && flatGrid[i]! > flatGrid[j]!) {
+            inversions++;
+          }
+        }
+      }
+
+      // For odd-sized grids, number of inversions must be even
+      if (size % 2 === 1) {
+        return inversions % 2 === 0;
+      }
+    
+      // For even-sized grids, sum of inversions and empty row from bottom must be odd
+      return (inversions + emptyRow) % 2 === 1;
     }
   
     private setupSolver() {
