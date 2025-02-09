@@ -52,9 +52,28 @@ export class NPuzzleSolver {
         this.solveColumn(size);  
         this.solveGrid(size - 1);
       } else if (size === 2) {
-        this.solveRow(size);
-        if (this.grid[this.grid.length - 1][this.grid.length - size] === null) {
-          this.moveEmpty({ x: this.grid.length - 1, y: this.grid.length - 1 });
+        // Special handling for 2x2 puzzle
+        const lastRow = this.grid.length - 1;
+        const lastCol = this.grid.length - 1;
+        
+        // First, solve the top-left number (1)
+        const number1 = (lastRow * this.grid.length) - 3;
+        this.moveNumberTowards(number1, { x: 0, y: lastRow - 1 });
+        this.fixed[lastRow - 1][0] = true;
+
+        // Then solve number 2
+        const number2 = number1 + 1;
+        this.moveNumberTowards(number2, { x: 1, y: lastRow - 1 });
+        this.fixed[lastRow - 1][1] = true;
+
+        // Finally solve number 3
+        const number3 = number1 + 2;
+        this.moveNumberTowards(number3, { x: 0, y: lastRow });
+        this.fixed[lastRow][0] = true;
+
+        // The empty space should end up in the bottom-right
+        if (this.grid[lastRow][lastCol] !== null) {
+          this.moveEmpty({ x: lastCol, y: lastRow });
         }
       }
     }
