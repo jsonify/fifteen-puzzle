@@ -73,8 +73,11 @@ export interface LeaderboardEntry {
       }
     }
 
-    clearLeaderboard(): void {
+    resetLeaderboard(): void {
+      // Clear all scores
       localStorage.removeItem(this.STORAGE_KEY)
+      // Reset unlocked levels to just the initial 2x2
+      localStorage.setItem(this.UNLOCKS_KEY, JSON.stringify([2]))
     }
   
     saveScore(level: number, score: number, playerName: string): boolean {
