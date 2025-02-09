@@ -47,7 +47,7 @@ export function VictoryDialog({
             Congratulations! You solved the {level}x{level} puzzle in {moves} moves.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form onSubmit={handleSubmit} className="mt-4">
+        <form onSubmit={handleSubmit} className="mt-4" role="form">
           <input
             type="text"
             value={playerName}
@@ -58,9 +58,12 @@ export function VictoryDialog({
           />
           <AlertDialogFooter className="mt-4">
             <AlertDialogCancel asChild>
-              <button type="button" onClick={() => {
-                onOpenChange(false)
-                onPlayAgain()
+              <button type="button" onClick={(e) => {
+                e.preventDefault()
+                if (window.confirm('Skip saving your score?')) {
+                  onOpenChange(false)
+                  onPlayAgain()
+                }
               }}>
               Skip
               </button>

@@ -57,8 +57,8 @@ describe('VictoryDialog', () => {
     )
 
     // Try to submit without entering name
-    const submitButton = screen.getByText('Save Score')
-    fireEvent.click(submitButton)
+    const form = screen.getByRole('form')
+    fireEvent.submit(form)
 
     // Verify form was not submitted
     expect(mockOnOpenChange).not.toHaveBeenCalled()
