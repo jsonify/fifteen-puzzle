@@ -41,3 +41,4 @@ original-codebase.md
 # ai-digest
 .aidigestignore
 codebase*.md
+.aider*
