@@ -23,11 +23,10 @@ export function SolveConfirmDialog({
   onOpenChange, 
   onConfirm 
 }: SolveConfirmDialogProps) {
-  const handleConfirm = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleConfirm = React.useCallback(() => {
     onConfirm();
-  }, [onConfirm]);
+    onOpenChange(false);
+  }, [onConfirm, onOpenChange]);
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -41,7 +40,7 @@ export function SolveConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>No, I will try harder</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={handleConfirm}
+            onClick={() => handleConfirm()}
             className="bg-blue-500 text-white hover:bg-blue-600"
           >
             Yes, solve this puzzle
