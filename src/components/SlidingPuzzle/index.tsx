@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import GameLevelGrid from '../GameLevelGrid'
+import { VictoryDialog } from '../VictoryDialog'
+import { HighScoreDialog } from '../HighScoreDialog'
 
 interface Position {
   row: number
@@ -21,6 +23,8 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [cells, setCells] = useState<Cell[]>([])
   const [moves, setMoves] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [showVictoryDialog, setShowVictoryDialog] = useState(false)
+  const [showHighScoreDialog, setShowHighScoreDialog] = useState(false)
   const [bestScores, setBestScores] = useState<Record<number, number>>({})
 
   // Check if a move is valid
@@ -58,26 +62,31 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
     setCells(newCells)
     setMoves(prev => prev + 1)
 
-    // Check for win condition
-    if (checkWin()) {
-      handleWin()
-    }
+    // Check for win condition after animation completes
+    setTimeout(() => {
+      if (checkWin()) {
+        handleWin()
+      }
+    }, 200) // Match the duration-200 from the transition class
   }
 
   // Handle win condition
   const handleWin = () => {
     setIsComplete(true)
-    const currentBest = bestScores[gameLevel] || Infinity
+    const leaderboardManager = new LeaderboardManager()
+    const currentBest = leaderboardManager.getScoreForLevel(gameLevel) || Infinity
     if (moves < currentBest) {
-      setBestScores(prev => ({
-        ...prev,
-        [gameLevel]: moves
-      }))
-      localStorage.setItem('puzzleBestScores', JSON.stringify({
-        ...bestScores,
-        [gameLevel]: moves
-      }))
+      setShowHighScoreDialog(true)
+    } else {
+      setShowVictoryDialog(true)
     }
+  }
+
+  const handleSaveHighScore = (playerName: string) => {
+    const leaderboardManager = new LeaderboardManager()
+    leaderboardManager.saveScore(gameLevel, moves, playerName)
+    setShowHighScoreDialog(false)
+    initializeGame()
   }
 
   // Initialize the game board
@@ -141,6 +150,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   useEffect(() => {
     if (forceWin) {
       setIsComplete(true)
+      setShowVictoryDialog(true)
     }
   }, [forceWin])
 
@@ -190,21 +200,28 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
 
       {/* Game Stats */}
       <div className="mt-6 text-center">
-        <p className="text-lg">Moves: {moves}</p>
+        <p className="text-lg" data-testid="moves-counter">Moves: {moves}</p>
         <p className="text-sm text-gray-600">
           Best Score ({gameLevel}x{gameLevel}): {bestScores[gameLevel] || '-'}
         </p>
-        {isComplete && (
-          <div className="mt-4">
-            <p className="text-xl font-bold text-green-600">Puzzle Solved! 🎉</p>
-            <button
-              onClick={initializeGame}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Play Again
-            </button>
-          </div>
-        )}
+        <VictoryDialog
+          open={showVictoryDialog}
+          onOpenChange={setShowVictoryDialog}
+          level={gameLevel}
+          moves={moves}
+          onPlayAgain={initializeGame}
+        />
+        <HighScoreDialog
+          open={showHighScoreDialog}
+          onOpenChange={setShowHighScoreDialog}
+          level={gameLevel}
+          moves={moves}
+          onSaveScore={handleSaveHighScore}
+          onSkip={() => {
+            setShowHighScoreDialog(false)
+            initializeGame()
+          }}
+        />
       </div>
     </div>
   )

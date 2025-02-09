@@ -98,9 +98,10 @@ describe('<SlidingPuzzle />', () => {
   
     // Wait for the move count to update
     await waitFor(() => {
-      const moves = screen.getByText(/Moves: [1-9]/)
+      const moves = screen.getByTestId('moves-counter')
       expect(moves).toBeInTheDocument()
-      expect(initialMoves).not.toHaveTextContent('Moves: 0')
+      const moveCount = parseInt(moves.textContent?.replace('Moves: ', '') || '0')
+      expect(moveCount).toBeGreaterThan(0)
     })
   })
 
@@ -116,12 +117,17 @@ describe('<SlidingPuzzle />', () => {
     expect(screen.getByText('Best Score (2x2): 5')).toBeInTheDocument()
   })
 
-  it('should start new game when play again is clicked after winning', () => {
+  it('should start new game when skipping victory dialog', async () => {
     render(<SlidingPuzzle forceWin={true} />)
     
-    // Find and click the Play Again button
-    const playAgainButton = screen.getByRole('button', { name: 'Play Again' })
-    fireEvent.click(playAgainButton)
+    // Wait for victory dialog to appear
+    await waitFor(() => {
+      expect(screen.getByTestId('victory-dialog')).toBeInTheDocument()
+    })
+
+    // Find and click the Skip button
+    const skipButton = screen.getByTestId('skip-button')
+    fireEvent.click(skipButton)
     
     // Verify moves reset to 0
     expect(screen.getByText('Moves: 0')).toBeInTheDocument()
