@@ -122,7 +122,7 @@ describe('<SlidingPuzzle />', () => {
     
     // Wait for and click the Skip button in victory dialog
     await waitFor(() => {
-      const skipButton = screen.getByRole('button', { name: 'Skip' })
+      const skipButton = screen.getByText('Skip')
       fireEvent.click(skipButton)
     })
     

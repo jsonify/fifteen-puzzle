@@ -57,17 +57,14 @@ export function VictoryDialog({
             autoFocus
           />
           <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel asChild>
-              <button 
-                type="button" 
-                onClick={() => {
-                  onOpenChange(false)
-                  onPlayAgain()
-                }}
-                aria-label="Skip"
-              >
-                Skip
-              </button>
+            <AlertDialogCancel 
+              type="button" 
+              onClick={() => {
+                onOpenChange(false)
+                onPlayAgain()
+              }}
+            >
+              Skip
             </AlertDialogCancel>
             <AlertDialogAction type="submit" className="bg-blue-500 text-white hover:bg-blue-600">
               Save Score
