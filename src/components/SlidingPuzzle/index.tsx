@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import GameLevelGrid from '../GameLevelGrid'
+import { VictoryDialog } from '../VictoryDialog'
 
 interface Position {
   row: number
@@ -21,6 +22,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [cells, setCells] = useState<Cell[]>([])
   const [moves, setMoves] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [bestScores, setBestScores] = useState<Record<number, number>>({})
 
   // Check if a move is valid
@@ -69,6 +71,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   // Handle win condition
   const handleWin = () => {
     setIsComplete(true)
+    setShowVictoryDialog(true)
     const currentBest = bestScores[gameLevel] || Infinity
     if (moves < currentBest) {
       setBestScores(prev => ({
@@ -196,17 +199,13 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
         <p className="text-sm text-gray-600">
           Best Score ({gameLevel}x{gameLevel}): {bestScores[gameLevel] || '-'}
         </p>
-        {isComplete && (
-          <div className="mt-4">
-            <p className="text-xl font-bold text-green-600">Puzzle Solved! 🎉</p>
-            <button
-              onClick={initializeGame}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Play Again
-            </button>
-          </div>
-        )}
+        <VictoryDialog
+          open={showVictoryDialog}
+          onOpenChange={setShowVictoryDialog}
+          level={gameLevel}
+          moves={moves}
+          onPlayAgain={initializeGame}
+        />
       </div>
     </div>
   )
