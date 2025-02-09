@@ -195,7 +195,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
 
       {/* Game Stats */}
       <div className="mt-6 text-center">
-        <p className="text-lg">Moves: {moves}</p>
+        <p className="text-lg" data-testid="moves-counter">Moves: {moves}</p>
         <p className="text-sm text-gray-600">
           Best Score ({gameLevel}x{gameLevel}): {bestScores[gameLevel] || '-'}
         </p>

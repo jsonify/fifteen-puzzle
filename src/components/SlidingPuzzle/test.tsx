@@ -98,11 +98,7 @@ describe('<SlidingPuzzle />', () => {
   
     // Wait for the move count to update
     await waitFor(() => {
-      const moves = screen.getByText((content, element) => {
-        const hasText = (element?.textContent || '').includes('Moves:')
-        const hasNumber = /Moves: [1-9]/.test(element?.textContent || '')
-        return hasText && hasNumber
-      })
+      const moves = screen.getByTestId('moves-counter')
       expect(moves).toBeInTheDocument()
       expect(moves.textContent).not.toContain('Moves: 0')
     })
