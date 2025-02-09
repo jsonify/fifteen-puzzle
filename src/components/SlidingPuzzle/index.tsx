@@ -73,7 +73,8 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   // Handle win condition
   const handleWin = () => {
     setIsComplete(true)
-    const currentBest = bestScores[gameLevel] || Infinity
+    const leaderboardManager = new LeaderboardManager()
+    const currentBest = leaderboardManager.getScoreForLevel(gameLevel) || Infinity
     if (moves < currentBest) {
       setShowHighScoreDialog(true)
     } else {
@@ -82,14 +83,8 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   }
 
   const handleSaveHighScore = (playerName: string) => {
-    setBestScores(prev => ({
-      ...prev,
-      [gameLevel]: moves
-    }))
-    localStorage.setItem('puzzleBestScores', JSON.stringify({
-      ...bestScores,
-      [gameLevel]: moves
-    }))
+    const leaderboardManager = new LeaderboardManager()
+    leaderboardManager.saveScore(gameLevel, moves, playerName)
     setShowHighScoreDialog(false)
     initializeGame()
   }

@@ -27,12 +27,10 @@ export function VictoryDialog({
   onPlayAgain 
 }: VictoryDialogProps) {
   const [playerName, setPlayerName] = useState('')
-  const leaderboardManager = new LeaderboardManager()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (playerName.trim()) {
-      leaderboardManager.saveScore(level, moves, playerName.trim())
       onOpenChange(false)
       onPlayAgain()
     }
