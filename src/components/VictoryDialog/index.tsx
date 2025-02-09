@@ -63,6 +63,7 @@ export function VictoryDialog({
                 onOpenChange(false)
                 onPlayAgain()
               }}
+              data-testid="skip-button"
             >
               Skip
             </AlertDialogCancel>
