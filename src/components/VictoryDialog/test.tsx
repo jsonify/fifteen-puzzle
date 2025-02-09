@@ -79,7 +79,7 @@ describe('VictoryDialog', () => {
       />
     )
 
-    const skipButton = screen.getByText('Skip')
+    const skipButton = screen.getByRole('button', { name: 'Skip' })
     fireEvent.click(skipButton)
 
     expect(mockOnOpenChange).toHaveBeenCalledWith(false)

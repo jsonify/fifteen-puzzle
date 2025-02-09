@@ -58,12 +58,9 @@ export function VictoryDialog({
           />
           <AlertDialogFooter className="mt-4">
             <AlertDialogCancel asChild>
-              <button type="button" onClick={(e) => {
-                e.preventDefault()
-                if (window.confirm('Skip saving your score?')) {
-                  onOpenChange(false)
-                  onPlayAgain()
-                }
+              <button type="button" onClick={() => {
+                onOpenChange(false)
+                onPlayAgain()
               }}>
               Skip
               </button>
