@@ -1,6 +1,24 @@
+// src/components/SlidingPuzzle/test.tsx
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import SlidingPuzzle from './index'
+import { LeaderboardManager } from '@/lib/LeaderboardManager'
+
+// Mock LeaderboardManager
+vi.mock('@/lib/LeaderboardManager', () => ({
+  LeaderboardManager: vi.fn().mockImplementation(() => ({
+    getScoreForLevel: vi.fn((level) => {
+      const scores = {
+        2: 5,
+        3: 10
+      };
+      return scores[level as keyof typeof scores] || null;
+    }),
+    isLevelUnlocked: vi.fn(() => true), // Mock all levels as unlocked for tests
+    saveScore: vi.fn()
+  }))
+}))
 
 describe('<SlidingPuzzle />', () => {
   const mockLocalStorage = {
@@ -69,17 +87,20 @@ describe('<SlidingPuzzle />', () => {
 
   it('should track moves', async () => {
     render(<SlidingPuzzle />)
-
+  
     // Initial move count should be 0
-    expect(screen.getByText('Moves: 0')).toBeInTheDocument()
-
+    const initialMoves = screen.getByText('Moves: 0')
+    expect(initialMoves).toBeInTheDocument()
+  
     // Find a valid move by looking for a button next to the empty space
     const buttons = screen.getAllByRole('button').filter(button => /^[1-3]$/.test(button.textContent || ''))
     fireEvent.click(buttons[0])
-
-    // Move count should increase after valid move
+  
+    // Wait for the move count to update
     await waitFor(() => {
-      expect(screen.queryByText('Moves: 0')).not.toBeInTheDocument()
+      const moves = screen.getByText(/Moves: [1-9]/)
+      expect(moves).toBeInTheDocument()
+      expect(initialMoves).not.toHaveTextContent('Moves: 0')
     })
   })
 

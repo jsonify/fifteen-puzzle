@@ -5,21 +5,30 @@ import GameLevelGrid from '.'
 import { LeaderboardManager } from '@/lib/LeaderboardManager'
 
 // Mock LeaderboardManager
-vi.mock('@/lib/LeaderboardManager', () => ({
-  LeaderboardManager: vi.fn().mockImplementation(() => ({
-    getScoreForLevel: vi.fn((level) => {
-      // Mock some scores
-      const scores = {
-        2: 1,
-        3: null
-      };
-      return scores[level as keyof typeof scores] || null;
-    })
-  }))
-}));
+vi.mock('@/lib/LeaderboardManager', () => {
+  return {
+    LeaderboardManager: class {
+      getScoreForLevel(level: number) {
+        const scores = {
+          2: 1,
+          3: null
+        };
+        return scores[level as keyof typeof scores] || null;
+      }
+
+      isLevelUnlocked(level: number) {
+        return level <= 3;
+      }
+    }
+  }
+})
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('<GameLevelGrid />', () => {
-  const mockSelectLevel = vi.fn();
+  const mockSelectLevel = vi.fn()
 
   beforeEach(() => {
     mockSelectLevel.mockClear()

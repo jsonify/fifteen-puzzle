@@ -6,6 +6,7 @@ interface GameLevel {
   size: number
   accessible: boolean
   score: number | null
+  unlockedMessage?: string
 }
 
 interface GameLevelGridProps {
@@ -15,19 +16,22 @@ interface GameLevelGridProps {
 
 const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
   const leaderboardManager = new LeaderboardManager()
+  console.log('LeaderboardManager methods:', Object.keys(leaderboardManager))
   
   const levels: GameLevel[] = Array.from({ length: 8 }, (_, i) => {
     const size = i + 2
+    const isUnlocked = leaderboardManager.isLevelUnlocked(size)
     return {
       size,
-      accessible: i < 2, // Only 2x2 and 3x3 initially accessible
-      score: leaderboardManager.getScoreForLevel(size)
+      accessible: isUnlocked,
+      score: leaderboardManager.getScoreForLevel(size),
+      unlockedMessage: !isUnlocked ? `Complete ${size-1}x${size-1} to unlock` : undefined
     }
   })
 
   return (
     <div className="grid grid-cols-3 gap-4 w-full p-4">
-      {levels.map(({ size, accessible, score }) => (
+      {levels.map(({ size, accessible, score, unlockedMessage }) => (
         <button
           key={size}
           onClick={() => accessible && onSelectLevel(size)}
@@ -48,6 +52,9 @@ const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
           <div className="text-2xl font-bold">{size}x{size}</div>
           {score !== null && (
             <div className="text-sm mt-2">Score: {score}</div>
+          )}
+          {unlockedMessage && (
+            <div className="text-xs mt-1 text-gray-400">{unlockedMessage}</div>
           )}
         </button>
       ))}
