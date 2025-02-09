@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import GameLevelGrid from '../GameLevelGrid'
 import { VictoryDialog } from '../VictoryDialog'
 import { HighScoreDialog } from '../HighScoreDialog'
+import { LeaderboardManager } from '@/lib/LeaderboardManager'
 
 interface Position {
   row: number
@@ -71,20 +72,20 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   }
 
   // Handle win condition
-  const handleWin = () => {
+  const handleWin = async () => {
     setIsComplete(true)
     const leaderboardManager = new LeaderboardManager()
-    const currentBest = leaderboardManager.getScoreForLevel(gameLevel) || Infinity
-    if (moves < currentBest) {
+    const currentBest = await leaderboardManager.getScoreForLevel(gameLevel)
+    if (moves < currentBest || currentBest === null) {
       setShowHighScoreDialog(true)
     } else {
       setShowVictoryDialog(true)
     }
   }
-
-  const handleSaveHighScore = (playerName: string) => {
+  
+  const handleSaveHighScore = async (playerName: string) => {
     const leaderboardManager = new LeaderboardManager()
-    leaderboardManager.saveScore(gameLevel, moves, playerName)
+    await leaderboardManager.saveScore(gameLevel, moves, playerName)
     setShowHighScoreDialog(false)
     initializeGame()
   }

@@ -25,45 +25,74 @@ interface LeaderboardEntry {
 
 export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const leaderboardManager = new LeaderboardManager()
-
-  const handleTrophyClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (window.confirm('🏆 Secret trophy click! Reset all scores?')) {
-      leaderboardManager.resetLeaderboard()
-      setEntries([])
-    }
-  }
 
   useEffect(() => {
     if (open) {
-      setEntries(leaderboardManager.getLeaderboard())
+      const fetchLeaderboard = async () => {
+        try {
+          setIsLoading(true)
+          setError(null)
+          const data = await leaderboardManager.getLeaderboard()
+          setEntries(data)
+        } catch (err) {
+          setError('Failed to load leaderboard. Please try again later.')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      fetchLeaderboard()
     }
   }, [open])
 
+  const handleTrophyClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (window.confirm('🏆 Secret trophy click! Reset all scores?')) {
+      try {
+        setIsLoading(true)
+        setError(null)
+        await leaderboardManager.resetLeaderboard()
+        setEntries([])
+      } catch (err) {
+        setError('Failed to reset leaderboard. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent 
-        className="max-w-md bg-white"
-        aria-describedby="leaderboard-description"
-      >
-        <VisuallyHidden id="leaderboard-description">
-          Leaderboard showing the best results for each puzzle level
-        </VisuallyHidden>
-        <AlertDialogHeader className="space-y-4">
+      <AlertDialogContent className="max-w-md bg-white" aria-describedby="leaderboard-dialog">
+        <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-xl">
             <span 
               role="img" 
               aria-label="trophy" 
-              className="text-yellow-400 cursor-pointer hover:scale-110 transition-transform" 
-              onClick={handleTrophyClick}
-            >🏆</span>
+              className={`text-yellow-400 cursor-pointer hover:scale-110 transition-transform
+                ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={!isLoading ? handleTrophyClick : undefined}
+            >
+              🏆
+            </span>
             Best Results
           </AlertDialogTitle>
           
           <AlertDialogDescription asChild>
             <>
-              {entries.length > 0 ? (
+              {error && (
+                <div className="text-red-500 p-4 text-center rounded-md">
+                  {error}
+                </div>
+              )}
+              
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : entries.length > 0 ? (
                 <div className="overflow-y-auto max-h-[60vh]">
                   <div className="grid grid-cols-3 gap-4 py-2 px-4 bg-muted/50 rounded-lg font-medium text-sm">
                     <div>Level</div>

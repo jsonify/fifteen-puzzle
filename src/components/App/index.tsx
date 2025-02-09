@@ -27,13 +27,14 @@ function App() {
   const leaderboardManager = new LeaderboardManager()
   const gameBoardRef = useRef<{ solve: () => void }>(null)
 
-  const handleVictory = () => {
+  const handleVictory = async () => {
     setShowGameControls(false);
-    const prevBestScore = leaderboardManager.getScoreForLevel(currentLevel);
+    const leaderboardManager = new LeaderboardManager()
+    const prevBestScore = await leaderboardManager.getScoreForLevel(currentLevel);
     
     if (prevBestScore === null || moves < prevBestScore) {
       const playerName = prompt('You achieved a new best score! Enter your name:') || 'Anonymous';
-      leaderboardManager.saveScore(currentLevel, moves, playerName);
+      await leaderboardManager.saveScore(currentLevel, moves, playerName);
     }
   };
 
