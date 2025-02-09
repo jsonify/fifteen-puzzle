@@ -1,8 +1,10 @@
-// src/components/App.tsx
 import React, { useState, useRef } from 'react'
-import { GameBoard } from './GameBoard'
-import GameLevelGrid from './GameLevelGrid'
-import { Leaderboard } from './Leaderboard'
+import { GameBoard } from '../GameBoard'
+import GameLevelGrid from '../GameLevelGrid'
+import { Leaderboard } from '../Leaderboard'
+import { GameControls } from '../GameControls'
+import { GameStatus } from '../GameStatus'
+import { SolveConfirmDialog } from '../SolveConfirmDialog'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,11 +12,9 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-  AlertDialogFooter,
-  AlertDialogCancel
+  AlertDialogFooter
 } from '@/components/ui/alert-dialog'
 import { LeaderboardManager } from '@/lib/LeaderboardManager'
-import { SolveConfirmDialog } from './SolveConfirmDialog'
 
 function App() {
   const [currentLevel, setCurrentLevel] = useState(0)
@@ -22,20 +22,9 @@ function App() {
   const [showInstructions, setShowInstructions] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [showGameControls, setShowGameControls] = useState(true)
+  const [showSolveConfirm, setShowSolveConfirm] = useState(false)
   const leaderboardManager = new LeaderboardManager()
-  const [showSolveConfirm, setShowSolveConfirm] = useState(false);
-  const gameBoardRef = useRef<{ solve: () => void }>(null);
-  
-  const handleSolve = () => {
-    setShowSolveConfirm(true);
-  };
-
-  const handleConfirmSolve = () => {
-    setShowSolveConfirm(false);
-    if (gameBoardRef.current) {
-      gameBoardRef.current.solve();
-    }
-  };
+  const gameBoardRef = useRef<{ solve: () => void }>(null)
 
   const handleVictory = () => {
     setShowGameControls(false)
@@ -51,15 +40,16 @@ function App() {
     }
   }
 
-  const handleRetry = () => {
-    setMoves(0)
-    setShowGameControls(true)
-  }
-
-  const handleChooseLevel = () => {
+  const handleLevelsClick = () => {
     setCurrentLevel(0)
     setMoves(0)
-    setShowGameControls(true)
+  }
+
+  const handleSolveConfirm = () => {
+    setShowSolveConfirm(false)
+    if (gameBoardRef.current) {
+      gameBoardRef.current.solve()
+    }
   }
 
   return (
@@ -72,56 +62,16 @@ function App() {
             </h1>
           </div>
 
-          <div className="flex gap-4 mb-6">
-            {currentLevel === 0 || !showGameControls ? (
-              <>
-                <button 
-                  className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                  onClick={() => setShowInstructions(true)}
-                >
-                  Instructions
-                </button>
-                <button 
-                  className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                  onClick={() => setShowLeaderboard(true)}
-                >
-                  Leaderboard
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  onClick={() => {
-                    setCurrentLevel(0)
-                    setMoves(0)
-                  }}
-                  className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                >
-                  Levels
-                </button>
-                <button 
-                  className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                  onClick={() => {}}
-                >
-                  Save
-                </button>
-                <button 
-                  className="flex-1 border-2 border-gray-300 text-gray-300 py-2 rounded"
-                  disabled
-                >
-                  Load
-                </button>
-                <button 
-                  className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                  onClick={handleSolve}
-                >
-                  Solve
-                </button>
-              </>
-            )}
-          </div>
+          <GameControls 
+            showGameControls={showGameControls}
+            onInstructionsClick={() => setShowInstructions(true)}
+            onLeaderboardClick={() => setShowLeaderboard(true)}
+            onLevelsClick={handleLevelsClick}
+            onSaveClick={() => {}}
+            onSolveClick={() => setShowSolveConfirm(true)}
+            currentLevel={currentLevel}
+          />
 
-          {/* Main Game Area */}
           <div className="w-full aspect-square border-2 border-blue-500 rounded bg-gray-50 mb-6">
             {currentLevel === 0 ? (
               <GameLevelGrid 
@@ -139,24 +89,28 @@ function App() {
                 onMove={() => setMoves(m => m + 1)}
                 onVictory={handleVictory}
                 onNextLevel={handleNextLevel}
-                onRetry={handleRetry}
-                onChooseLevel={handleChooseLevel}
-                ref={gameBoardRef} 
+                onRetry={() => {
+                  setMoves(0)
+                  setShowGameControls(true)
+                }}
+                onChooseLevel={() => {
+                  setCurrentLevel(0)
+                  setMoves(0)
+                  setShowGameControls(true)
+                }}
+                ref={gameBoardRef}
               />
             )}
           </div>
 
-          {/* Game Stats */}
-          {currentLevel > 0 && (
-            <div className="text-center space-y-1" data-testid="game-stats">
-              <p>Moves: <span data-testid="moves-count">{moves}</span></p>
-              <p>Best Score ({currentLevel}x{currentLevel}): -</p>
-            </div>
-          )}
+          <GameStatus 
+            currentLevel={currentLevel}
+            moves={moves}
+            isVisible={currentLevel > 0}
+          />
         </div>
       </div>
 
-      {/* Dialogs */}
       <Leaderboard 
         open={showLeaderboard}
         onOpenChange={setShowLeaderboard}
@@ -165,11 +119,11 @@ function App() {
       <SolveConfirmDialog
         open={showSolveConfirm}
         onOpenChange={setShowSolveConfirm}
-        onConfirm={handleConfirmSolve}
+        onConfirm={handleSolveConfirm}
       />
 
       <AlertDialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <AlertDialogContent className="max-w-md bg-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Instructions</AlertDialogTitle>
             <AlertDialogDescription>
