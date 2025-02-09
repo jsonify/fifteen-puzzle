@@ -31,10 +31,10 @@ export function SolveConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-sm bg-white">
+      <AlertDialogContent className="max-w-sm bg-white" description="solve-confirmation">
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription id="solve-confirmation">
             Your game result will not be recorded!
           </AlertDialogDescription>
         </AlertDialogHeader>

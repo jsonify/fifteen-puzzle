@@ -16,7 +16,6 @@ interface GameLevelGridProps {
 
 const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
   const leaderboardManager = new LeaderboardManager()
-  console.log('LeaderboardManager methods:', Object.keys(leaderboardManager))
   
   const levels: GameLevel[] = Array.from({ length: 8 }, (_, i) => {
     const size = i + 2

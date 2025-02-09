@@ -140,7 +140,7 @@ function App() {
       />
 
       <AlertDialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-m bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Instructions</AlertDialogTitle>
             <AlertDialogDescription>
