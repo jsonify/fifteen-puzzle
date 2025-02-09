@@ -116,12 +116,12 @@ describe('<SlidingPuzzle />', () => {
     expect(screen.getByText('Best Score (2x2): 5')).toBeInTheDocument()
   })
 
-  it('should start new game when play again is clicked after winning', () => {
+  it('should start new game when skipping victory dialog', async () => {
     render(<SlidingPuzzle forceWin={true} />)
     
-    // Find and click the Play Again button
-    const playAgainButton = screen.getByRole('button', { name: 'Play Again' })
-    fireEvent.click(playAgainButton)
+    // Find and click the Skip button in victory dialog
+    const skipButton = screen.getByRole('button', { name: 'Skip' })
+    fireEvent.click(skipButton)
     
     // Verify moves reset to 0
     expect(screen.getByText('Moves: 0')).toBeInTheDocument()
