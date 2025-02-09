@@ -34,7 +34,7 @@ describe('<App />', () => {
     expect(screen.getByText('Solve')).toBeInTheDocument()
     
     // Game stats should be visible with 0 moves
-    expect(screen.getByTestId('moves-count')).toHaveTextContent('0')
+    expect(screen.getByTestId('moves-display')).toHaveTextContent('Moves: 0')
   })
 
   it('should handle game controls navigation', () => {
