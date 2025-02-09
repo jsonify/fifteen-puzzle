@@ -9,6 +9,7 @@ import {
   AlertDialogAction,
   AlertDialogFooter
 } from '@/components/ui/alert-dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { LeaderboardManager } from '@/lib/LeaderboardManager'
 
 interface LeaderboardProps {
@@ -34,7 +35,13 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md bg-white">
+      <AlertDialogContent 
+        className="max-w-md bg-white"
+        aria-describedby="leaderboard-description"
+      >
+        <VisuallyHidden id="leaderboard-description">
+          Leaderboard showing the best results for each puzzle level
+        </VisuallyHidden>
         <AlertDialogHeader className="space-y-4">
           <AlertDialogTitle className="flex items-center gap-2 text-xl">
             <span role="img" aria-label="trophy" className="text-yellow-400">🏆</span>
