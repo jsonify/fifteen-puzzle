@@ -1,5 +1,5 @@
 // src/components/App.tsx
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { GameBoard } from './GameBoard'
 import GameLevelGrid from './GameLevelGrid'
 import { Leaderboard } from './Leaderboard'
@@ -10,9 +10,11 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-  AlertDialogFooter
+  AlertDialogFooter,
+  AlertDialogCancel
 } from '@/components/ui/alert-dialog'
 import { LeaderboardManager } from '@/lib/LeaderboardManager'
+import { SolveConfirmDialog } from './SolveConfirmDialog'
 
 function App() {
   const [currentLevel, setCurrentLevel] = useState(0)
@@ -21,6 +23,19 @@ function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [showGameControls, setShowGameControls] = useState(true)
   const leaderboardManager = new LeaderboardManager()
+  const [showSolveConfirm, setShowSolveConfirm] = useState(false);
+  const gameBoardRef = useRef<{ solve: () => void }>(null);
+  
+  const handleSolve = () => {
+    setShowSolveConfirm(true);
+  };
+
+  const handleConfirmSolve = () => {
+    setShowSolveConfirm(false);
+    if (gameBoardRef.current) {
+      gameBoardRef.current.solve();
+    }
+  };
 
   const handleVictory = () => {
     setShowGameControls(false)
@@ -98,7 +113,7 @@ function App() {
                 </button>
                 <button 
                   className="flex-1 border-2 border-blue-500 text-blue-500 py-2 rounded"
-                  onClick={() => {}}
+                  onClick={handleSolve}
                 >
                   Solve
                 </button>
@@ -126,6 +141,7 @@ function App() {
                 onNextLevel={handleNextLevel}
                 onRetry={handleRetry}
                 onChooseLevel={handleChooseLevel}
+                ref={gameBoardRef} 
               />
             )}
           </div>
@@ -144,6 +160,12 @@ function App() {
       <Leaderboard 
         open={showLeaderboard}
         onOpenChange={setShowLeaderboard}
+      />
+
+      <SolveConfirmDialog
+        open={showSolveConfirm}
+        onOpenChange={setShowSolveConfirm}
+        onConfirm={handleConfirmSolve}
       />
 
       <AlertDialog open={showInstructions} onOpenChange={setShowInstructions}>
