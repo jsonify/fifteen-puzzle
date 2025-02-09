@@ -119,9 +119,11 @@ describe('<SlidingPuzzle />', () => {
   it('should start new game when skipping victory dialog', async () => {
     render(<SlidingPuzzle forceWin={true} />)
     
-    // Find and click the Skip button in victory dialog
-    const skipButton = screen.getByRole('button', { name: 'Skip' })
-    fireEvent.click(skipButton)
+    // Wait for and click the Skip button in victory dialog
+    await waitFor(() => {
+      const skipButton = screen.getByRole('button', { name: 'Skip' })
+      fireEvent.click(skipButton)
+    })
     
     // Verify moves reset to 0
     expect(screen.getByText('Moves: 0')).toBeInTheDocument()
