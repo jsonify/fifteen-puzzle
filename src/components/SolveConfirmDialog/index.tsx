@@ -24,8 +24,10 @@ export function SolveConfirmDialog({
   onConfirm 
 }: SolveConfirmDialogProps) {
   const handleConfirm = React.useCallback(() => {
-    onConfirm();
     onOpenChange(false);
+    setTimeout(() => {
+      onConfirm();
+    }, 0);
   }, [onConfirm, onOpenChange]);
 
   return (

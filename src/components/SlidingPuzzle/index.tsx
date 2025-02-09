@@ -26,6 +26,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [showHighScoreDialog, setShowHighScoreDialog] = useState(false)
   const [bestScores, setBestScores] = useState<Record<number, number>>({})
+  const [solving, setSolving] = useState(false)
 
   // Check if a move is valid
   const isValidMove = (index: number): boolean => {
@@ -49,7 +50,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
 
   // Handle cell click
   const handleCellClick = (index: number) => {
-    if (isComplete || !isValidMove(index)) return
+    if (isComplete || !isValidMove(index) || solving) return
 
     const newCells = [...cells]
     const emptyIndex = cells.findIndex(cell => cell.value === null)
