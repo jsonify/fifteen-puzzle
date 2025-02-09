@@ -122,7 +122,7 @@ describe('<SlidingPuzzle />', () => {
     
     // Wait for victory dialog to appear
     await waitFor(() => {
-      expect(screen.getByText('🎉 Puzzle Solved!')).toBeInTheDocument()
+      expect(screen.getByTestId('victory-dialog')).toBeInTheDocument()
     })
 
     // Find and click the Skip button

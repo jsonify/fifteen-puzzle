@@ -40,7 +40,7 @@ export function VictoryDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-sm bg-white" description="victory-dialog">
+      <AlertDialogContent className="max-w-sm bg-white" description="victory-dialog" data-testid="victory-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle>🎉 Puzzle Solved!</AlertDialogTitle>
           <AlertDialogDescription id="victory-dialog">
