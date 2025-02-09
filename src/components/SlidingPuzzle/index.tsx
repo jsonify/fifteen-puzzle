@@ -58,10 +58,12 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
     setCells(newCells)
     setMoves(prev => prev + 1)
 
-    // Check for win condition
-    if (checkWin()) {
-      handleWin()
-    }
+    // Check for win condition after animation completes
+    setTimeout(() => {
+      if (checkWin()) {
+        handleWin()
+      }
+    }, 200) // Match the duration-200 from the transition class
   }
 
   // Handle win condition
