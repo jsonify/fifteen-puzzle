@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import GameLevelGrid from '../GameLevelGrid'
 import { VictoryDialog } from '../VictoryDialog'
+import { HighScoreDialog } from '../HighScoreDialog'
 
 interface Position {
   row: number
@@ -23,6 +24,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   const [moves, setMoves] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
+  const [showHighScoreDialog, setShowHighScoreDialog] = useState(false)
   const [bestScores, setBestScores] = useState<Record<number, number>>({})
 
   // Check if a move is valid
@@ -71,18 +73,25 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   // Handle win condition
   const handleWin = () => {
     setIsComplete(true)
-    setShowVictoryDialog(true)
     const currentBest = bestScores[gameLevel] || Infinity
     if (moves < currentBest) {
-      setBestScores(prev => ({
-        ...prev,
-        [gameLevel]: moves
-      }))
-      localStorage.setItem('puzzleBestScores', JSON.stringify({
-        ...bestScores,
-        [gameLevel]: moves
-      }))
+      setShowHighScoreDialog(true)
+    } else {
+      setShowVictoryDialog(true)
     }
+  }
+
+  const handleSaveHighScore = (playerName: string) => {
+    setBestScores(prev => ({
+      ...prev,
+      [gameLevel]: moves
+    }))
+    localStorage.setItem('puzzleBestScores', JSON.stringify({
+      ...bestScores,
+      [gameLevel]: moves
+    }))
+    setShowHighScoreDialog(false)
+    initializeGame()
   }
 
   // Initialize the game board
@@ -206,6 +215,17 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
           level={gameLevel}
           moves={moves}
           onPlayAgain={initializeGame}
+        />
+        <HighScoreDialog
+          open={showHighScoreDialog}
+          onOpenChange={setShowHighScoreDialog}
+          level={gameLevel}
+          moves={moves}
+          onSaveScore={handleSaveHighScore}
+          onSkip={() => {
+            setShowHighScoreDialog(false)
+            initializeGame()
+          }}
         />
       </div>
     </div>
