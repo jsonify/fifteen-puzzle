@@ -12,7 +12,7 @@ export const GameStatus: React.FC<GameStatusProps> = ({ currentLevel, moves, isV
 
   return (
     <div className="text-center space-y-1" data-testid="game-stats">
-      <p>Moves: <span data-testid="moves-count">{moves}</span></p>
+      <p data-testid="moves-display">Moves: {moves}</p>
       <p>Best Score ({currentLevel}x{currentLevel}): -</p>
     </div>
   )
