@@ -27,6 +27,14 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const leaderboardManager = new LeaderboardManager()
 
+  const handleTrophyClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (window.confirm('🏆 Secret trophy click! Reset all scores?')) {
+      leaderboardManager.resetLeaderboard()
+      setEntries([])
+    }
+  }
+
   useEffect(() => {
     if (open) {
       setEntries(leaderboardManager.getLeaderboard())
@@ -44,7 +52,12 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
         </VisuallyHidden>
         <AlertDialogHeader className="space-y-4">
           <AlertDialogTitle className="flex items-center gap-2 text-xl">
-            <span role="img" aria-label="trophy" className="text-yellow-400">🏆</span>
+            <span 
+              role="img" 
+              aria-label="trophy" 
+              className="text-yellow-400 cursor-pointer hover:scale-110 transition-transform" 
+              onClick={handleTrophyClick}
+            >🏆</span>
             Best Results
           </AlertDialogTitle>
           
