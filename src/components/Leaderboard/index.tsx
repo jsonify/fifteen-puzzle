@@ -41,33 +41,35 @@ export function Leaderboard({ open, onOpenChange }: LeaderboardProps) {
             Best Results
           </AlertDialogTitle>
           
-          <AlertDialogDescription>
-            {entries.length > 0 ? (
-              <div className="overflow-y-auto max-h-[60vh]">
-                <div className="grid grid-cols-3 gap-4 py-2 px-4 bg-muted/50 rounded-lg font-medium text-sm">
-                  <div>Level</div>
-                  <div>Score</div>
-                  <div>Player</div>
+          <AlertDialogDescription asChild>
+            <>
+              {entries.length > 0 ? (
+                <div className="overflow-y-auto max-h-[60vh]">
+                  <div className="grid grid-cols-3 gap-4 py-2 px-4 bg-muted/50 rounded-lg font-medium text-sm">
+                    <div>Level</div>
+                    <div>Score</div>
+                    <div>Player</div>
+                  </div>
+                  
+                  <div className="space-y-2 mt-2">
+                    {entries.map((entry) => (
+                      <div 
+                        key={entry.level}
+                        className="grid grid-cols-3 gap-4 py-2 px-4 rounded-lg hover:bg-muted/30 transition-colors"
+                      >
+                        <div>{entry.level}x{entry.level}</div>
+                        <div>{entry.score}</div>
+                        <div className="truncate">{entry.playerName}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="space-y-2 mt-2">
-                  {entries.map((entry) => (
-                    <div 
-                      key={entry.level}
-                      className="grid grid-cols-3 gap-4 py-2 px-4 rounded-lg hover:bg-muted/30 transition-colors"
-                    >
-                      <div>{entry.level}x{entry.level}</div>
-                      <div>{entry.score}</div>
-                      <div className="truncate">{entry.playerName}</div>
-                    </div>
-                  ))}
+              ) : (
+                <div className="text-center py-8" data-testid="empty-state">
+                  No scores recorded yet
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8" data-testid="empty-state">
-                No scores recorded yet
-              </div>
-            )}
+              )}
+            </>
           </AlertDialogDescription>
         </AlertDialogHeader>
         
