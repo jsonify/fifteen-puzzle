@@ -1,10 +1,25 @@
 // src/components/GameLevelGrid/test.tsx
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import GameLevelGrid from '.'
+import { LeaderboardManager } from '@/lib/LeaderboardManager'
+
+// Mock LeaderboardManager
+vi.mock('@/lib/LeaderboardManager', () => ({
+  LeaderboardManager: vi.fn().mockImplementation(() => ({
+    getScoreForLevel: vi.fn((level) => {
+      // Mock some scores
+      const scores = {
+        2: 1,
+        3: null
+      };
+      return scores[level as keyof typeof scores] || null;
+    })
+  }))
+}));
 
 describe('<GameLevelGrid />', () => {
-  const mockSelectLevel = vi.fn()
+  const mockSelectLevel = vi.fn();
 
   beforeEach(() => {
     mockSelectLevel.mockClear()
@@ -60,13 +75,53 @@ describe('<GameLevelGrid />', () => {
   })
 
   it('displays scores for completed levels', () => {
-    render(<GameLevelGrid onSelectLevel={mockSelectLevel} currentLevel={0} />)
+    render(<GameLevelGrid onSelectLevel={mockSelectLevel} currentLevel={0} />);
     
-    // Only 2x2 should show a score initially
-    expect(screen.getByText('Score: 1')).toBeInTheDocument()
+    // Check for mocked score of 1 on the 2x2 level
+    const level2Button = screen.getByTestId('level-2');
+    expect(level2Button).toHaveTextContent('Score: 1');
+  });
+
+  it('displays persisted scores for completed levels', () => {
+    render(<GameLevelGrid onSelectLevel={mockSelectLevel} currentLevel={0} />);
     
-    // No other levels should show scores
-    const scoreElements = screen.getAllByText(/Score:/i)
-    expect(scoreElements).toHaveLength(1)
-  })
+    // Verify the 2x2 level shows score of 1
+    const level2Button = screen.getByTestId('level-2');
+    expect(level2Button).toHaveTextContent('Score: 1');
+    
+    // Also verify that other levels don't show scores
+    const level3Button = screen.getByTestId('level-3');
+    expect(level3Button).not.toHaveTextContent('Score:');
+  });
+
+  it('does not display scores for levels without completion', () => {
+    render(<GameLevelGrid onSelectLevel={mockSelectLevel} currentLevel={0} />);
+    
+    // 3x3 and up should not have scores
+    const level3Button = screen.getByTestId('level-3');
+    expect(level3Button).not.toHaveTextContent('Score:');
+  });
+  
+  it('renders all levels correctly', () => {
+    render(<GameLevelGrid onSelectLevel={mockSelectLevel} currentLevel={0} />);
+    
+    // Should have 8 levels (2x2 through 9x9)
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(8);
+
+    // First level (2x2) should be enabled and show score
+    expect(buttons[0]).toBeEnabled();
+    expect(buttons[0]).toHaveTextContent('2x2');
+    expect(buttons[0]).toHaveTextContent('Score: 1');
+
+    // Second level (3x3) should be enabled but no score
+    expect(buttons[1]).toBeEnabled();
+    expect(buttons[1]).toHaveTextContent('3x3');
+    expect(buttons[1]).not.toHaveTextContent('Score:');
+
+    // Rest should be disabled
+    for (let i = 2; i < buttons.length; i++) {
+      expect(buttons[i]).toBeDisabled();
+    }
+  });
 })

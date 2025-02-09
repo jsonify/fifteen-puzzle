@@ -1,5 +1,6 @@
 // src/components/GameLevelGrid/index.tsx
 import React from 'react'
+import { LeaderboardManager } from '@/lib/LeaderboardManager'
 
 interface GameLevel {
   size: number
@@ -13,11 +14,16 @@ interface GameLevelGridProps {
 }
 
 const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
-  const levels: GameLevel[] = Array.from({ length: 8 }, (_, i) => ({
-    size: i + 2,
-    accessible: i < 2, // Only 2x2 and 3x3 initially accessible
-    score: i === 0 ? 1 : null
-  }))
+  const leaderboardManager = new LeaderboardManager()
+  
+  const levels: GameLevel[] = Array.from({ length: 8 }, (_, i) => {
+    const size = i + 2
+    return {
+      size,
+      accessible: i < 2, // Only 2x2 and 3x3 initially accessible
+      score: leaderboardManager.getScoreForLevel(size)
+    }
+  })
 
   return (
     <div className="grid grid-cols-3 gap-4 w-full p-4">

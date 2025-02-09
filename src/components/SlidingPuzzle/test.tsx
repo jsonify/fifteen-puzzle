@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest'
-import React from 'react'
 import SlidingPuzzle from './index'
 
 describe('<SlidingPuzzle />', () => {

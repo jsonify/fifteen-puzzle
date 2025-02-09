@@ -21,35 +21,6 @@ export interface LeaderboardEntry {
       }
     }
   
-    saveScore(level: number, score: number, playerName: string): boolean {
-      try {
-        const leaderboard = this.getLeaderboard()
-        const existingEntry = leaderboard.find(entry => entry.level === level)
-        
-        if (!existingEntry || existingEntry.score > score) {
-          // Remove existing entry if present
-          const filteredLeaderboard = leaderboard.filter(entry => entry.level !== level)
-          
-          // Add new entry
-          const newEntry: LeaderboardEntry = {
-            level,
-            score,
-            playerName,
-            timestamp: Date.now()
-          }
-          
-          const newLeaderboard = this.sortEntries([...filteredLeaderboard, newEntry])
-          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newLeaderboard))
-          return true
-        }
-        
-        return false
-      } catch (error) {
-        console.error('Error saving score:', error)
-        return false
-      }
-    }
-  
     private sortEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
       return entries.sort((a, b) => a.level - b.level)
     }
@@ -59,8 +30,42 @@ export interface LeaderboardEntry {
     }
   
     getScoreForLevel(level: number): number | null {
-      const leaderboard = this.getLeaderboard()
-      const entry = leaderboard.find(e => e.level === level)
-      return entry?.score ?? null
+      try {
+        const leaderboard = this.getLeaderboard();
+        const entry = leaderboard.find(e => e.level === level);
+        return entry?.score ?? null;
+      } catch (error) {
+        console.error('Error getting score for level:', error);
+        return null;
+      }
+    }
+  
+    saveScore(level: number, score: number, playerName: string): boolean {
+      try {
+        const leaderboard = this.getLeaderboard();
+        const existingEntry = leaderboard.find(entry => entry.level === level);
+        
+        if (!existingEntry || existingEntry.score > score) {
+          // Remove existing entry if present
+          const filteredLeaderboard = leaderboard.filter(entry => entry.level !== level);
+          
+          // Add new entry
+          const newEntry: LeaderboardEntry = {
+            level,
+            score,
+            playerName,
+            timestamp: Date.now()
+          };
+          
+          const newLeaderboard = this.sortEntries([...filteredLeaderboard, newEntry]);
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newLeaderboard));
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Error saving score:', error);
+        return false;
+      }
     }
   }
