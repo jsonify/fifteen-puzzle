@@ -1,10 +1,14 @@
-// src/lib/LeaderboardManager.test.ts
+// src/lib/test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
 import { LeaderboardManager } from './LeaderboardManager'
 
 describe('LeaderboardManager', () => {
   let leaderboardManager: LeaderboardManager;
   
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   // Mock localStorage
   const localStorageMock = (() => {
     let store: Record<string, string> = {};
@@ -90,4 +94,33 @@ describe('LeaderboardManager', () => {
     const score = leaderboardManager.getScoreForLevel(2);
     expect(score).toBeNull();
   });
-});
+})
+
+describe('Level Unlocking', () => {
+  it('initializes with level 2 unlocked', () => {
+    const manager = new LeaderboardManager()
+    expect(manager.isLevelUnlocked(2)).toBe(true)  // Level 2 should be unlocked initially
+    expect(manager.isLevelUnlocked(3)).toBe(false) // Level 3 should be locked initially
+  })
+
+  it('unlocks next level after completing current level', () => {
+    const manager = new LeaderboardManager()
+    
+    // Complete level 2
+    manager.saveScore(2, 10, 'Player1')
+    expect(manager.isLevelUnlocked(3)).toBe(true)  // Level 3 should now be unlocked
+    expect(manager.isLevelUnlocked(4)).toBe(false) // Level 4 should still be locked
+    
+    // Complete level 3
+    manager.saveScore(3, 15, 'Player1')
+    expect(manager.isLevelUnlocked(4)).toBe(true)  // Level 4 should now be unlocked
+  })
+
+  it('persists unlocked levels between instances', () => {
+    const manager1 = new LeaderboardManager()
+    manager1.saveScore(2, 10, 'Player1')
+    
+    const manager2 = new LeaderboardManager()
+    expect(manager2.isLevelUnlocked(3)).toBe(true) // Level 3 should remain unlocked
+  })
+})
