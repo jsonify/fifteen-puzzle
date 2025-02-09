@@ -101,6 +101,14 @@ describe('<App />', () => {
     const level2Button = screen.getByTestId('level-2')
     fireEvent.click(level2Button)
     
+    // Check if game stats are visible
+    const gameStats = screen.getByTestId('game-stats')
+    expect(gameStats).toBeInTheDocument()
+    
+    // Check moves display
+    const movesDisplay = screen.getByTestId('moves-display')
+    expect(movesDisplay).toHaveTextContent('Moves: 0')
+    
     // Return to levels and select new game
     const levelsButton = screen.getByText('Levels')
     fireEvent.click(levelsButton)
@@ -108,7 +116,7 @@ describe('<App />', () => {
     const level3Button = screen.getByTestId('level-3')
     fireEvent.click(level3Button)
     
-    // Moves should be reset
-    expect(screen.getByTestId('moves-count')).toHaveTextContent('0')
+    // Check moves were reset
+    expect(screen.getByTestId('moves-display')).toHaveTextContent('Moves: 0')
   })
 })
