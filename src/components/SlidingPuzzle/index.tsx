@@ -146,6 +146,7 @@ const SlidingPuzzle: React.FC<Props> = ({ forceWin = false }) => {
   useEffect(() => {
     if (forceWin) {
       setIsComplete(true)
+      setShowVictoryDialog(true)
     }
   }, [forceWin])
 
