@@ -19,34 +19,67 @@ const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const leaderboardManager = new LeaderboardManager()
-  
+
   useEffect(() => {
+    let isMounted = true;
+
     const loadLevels = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const levelData = await Promise.all(
-          Array.from({ length: 8 }, async (_, i) => {
-            const size = i + 2;
-            const isUnlocked = await leaderboardManager.isLevelUnlocked(size);
-            const score = await leaderboardManager.getScoreForLevel(size);
+
+        // First check if we can get the initial level unlock status
+        const initialLevelCheck = await leaderboardManager.isLevelUnlocked(2);
+        if (!initialLevelCheck) {
+          throw new Error('Could not verify level access');
+        }
+
+        const levelPromises = Array.from({ length: 8 }, async (_, i) => {
+          const size = i + 2;
+          try {
+            const [isUnlocked, score] = await Promise.all([
+              leaderboardManager.isLevelUnlocked(size),
+              leaderboardManager.getScoreForLevel(size)
+            ]);
             return {
               size,
               accessible: isUnlocked,
               score,
               unlockedMessage: !isUnlocked ? `Complete ${size-1}x${size-1} to unlock` : undefined
             };
-          })
-        );
-        setLevels(levelData);
+          } catch (error) {
+            console.error(`Error loading level ${size}:`, error);
+            return {
+              size,
+              accessible: size === 2, // Always allow level 2
+              score: null,
+              unlockedMessage: size === 2 ? undefined : 'Level unavailable'
+            };
+          }
+        });
+
+        const levelData = await Promise.all(levelPromises);
+        if (isMounted) {
+          setLevels(levelData);
+          setError(null);
+        }
       } catch (err) {
-        setError('Failed to load levels. Please refresh the page.');
+        console.error('Level loading error:', err);
+        if (isMounted) {
+          setError('Failed to load levels. Please refresh the page.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadLevels();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -62,7 +95,7 @@ const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-red-500 text-center p-4">
           <p className="mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
@@ -83,9 +116,9 @@ const GameLevelGrid = ({ onSelectLevel, currentLevel }: GameLevelGridProps) => {
           aria-disabled={!accessible}
           data-testid={`level-${size}`}
           className={`
-            aspect-square rounded-lg border-2 p-4 
+            aspect-square rounded-lg border-2 p-4
             flex flex-col items-center justify-center
-            ${accessible 
+            ${accessible
               ? 'border-blue-500 text-blue-500 hover:shadow-md cursor-pointer'
               : 'border-gray-300 text-gray-300 cursor-not-allowed bg-gray-50'
             }

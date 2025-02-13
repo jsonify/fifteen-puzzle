@@ -9,39 +9,43 @@ export interface LeaderboardEntry {
 }
 
 export class LeaderboardManager {
+  private readonly STORAGE_KEY = 'leaderboard';
+  private readonly UNLOCKS_KEY = 'unlockedLevels';
   private readonly sheetsService: GoogleSheetsService;
-  private cachedLeaderboard: LeaderboardEntry[] = [];
-  private cachedUnlockedLevels: number[] = [2]; // Start with level 2 unlocked
+  private useLocalStorageOnly = true; // Start with local storage by default
 
   constructor() {
-    // Replace with your deployed Google Apps Script Web App URL
-    this.sheetsService = new GoogleSheetsService('https://script.google.com/macros/s/AKfycbxPAC13oau8TQtscu-wgY49XmQFH2gaKDvy8XOllRgvgLDiWLf6oeCPJY-XhuluYe7E/exec');
-    this.initializeCache();
-  }
+    this.sheetsService = new GoogleSheetsService('https://script.google.com/macros/s/AKfycbzVJ_k_muhKWSheCQR7z6Bc5IRuOFyc62vHDbPnFy9UkBhe6UzLm-L5tJAYjThnF2zc/exec');
 
-  private async initializeCache(): Promise<void> {
-    try {
-      // Load initial data
-      const [leaderboard, gameState] = await Promise.all([
-        this.sheetsService.getLeaderboard(),
-        this.sheetsService.getGameState()
-      ]);
-
-      this.cachedLeaderboard = leaderboard;
-      this.cachedUnlockedLevels = gameState.unlockedLevels || [2];
-    } catch (error) {
-      console.error('Error initializing cache:', error);
+    // Initialize local storage
+    if (!localStorage.getItem(this.UNLOCKS_KEY)) {
+      localStorage.setItem(this.UNLOCKS_KEY, JSON.stringify([2]));
     }
+    if (!localStorage.getItem(this.STORAGE_KEY)) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
+    }
+
+    // Test connection on initialization
+    this.testConnection().catch(error => {
+      console.error('Failed to connect to Google Sheets:', error);
+      this.useLocalStorageOnly = true;
+    });
   }
 
-  public async getLeaderboard(): Promise<LeaderboardEntry[]> {
+  private async testConnection() {
     try {
-      const leaderboard = await this.sheetsService.getLeaderboard();
-      this.cachedLeaderboard = leaderboard;
-      return this.sortEntries(leaderboard);
+      await this.sheetsService.getGameState();
     } catch (error) {
-      console.error('Error getting leaderboard:', error);
-      return this.cachedLeaderboard;
+      console.log('API unreachable, using local storage only');
+      this.useLocalStorageOnly = true;
+
+      // Initialize local storage if needed
+      if (!localStorage.getItem(this.UNLOCKS_KEY)) {
+        localStorage.setItem(this.UNLOCKS_KEY, JSON.stringify([2]));
+      }
+      if (!localStorage.getItem(this.STORAGE_KEY)) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
+      }
     }
   }
 
@@ -49,72 +53,87 @@ export class LeaderboardManager {
     try {
       const leaderboard = await this.getLeaderboard();
       const entry = leaderboard.find(e => e.level === level);
-      return entry?.score ?? null;
+      return entry ? entry.score : null;
     } catch (error) {
       console.error('Error getting score for level:', error);
-      const entry = this.cachedLeaderboard.find(e => e.level === level);
-      return entry?.score ?? null;
+      return null;
+    }
+  }
+
+  public async getLeaderboard(): Promise<LeaderboardEntry[]> {
+    try {
+      if (this.useLocalStorageOnly) {
+        const data = localStorage.getItem(this.STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+      }
+      return await this.sheetsService.getLeaderboard();
+    } catch (error) {
+      console.error('Error getting leaderboard:', error);
+      const data = localStorage.getItem(this.STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
     }
   }
 
   public async saveScore(level: number, score: number, playerName: string): Promise<boolean> {
     try {
-      const currentBest = await this.getScoreForLevel(level);
-      if (currentBest === null || score < currentBest) {
-        const success = await this.sheetsService.saveScore(level, score, playerName);
-        if (success) {
-          // Update cache
-          await this.getLeaderboard();
-          // Unlock next level
-          await this.unlockNextLevel(level);
+      const entry = { level, score, playerName };
+
+      if (this.useLocalStorageOnly) {
+        const leaderboard = await this.getLeaderboard();
+        const existingIndex = leaderboard.findIndex(e => e.level === level);
+
+        if (existingIndex >= 0) {
+          if (score < leaderboard[existingIndex].score) {
+            leaderboard[existingIndex] = entry;
+          }
+        } else {
+          leaderboard.push(entry);
         }
-        return success;
+
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leaderboard));
+        await this.unlockNextLevel(level);
+        return true;
       }
-      return false;
+
+      return await this.sheetsService.saveScore(level, score, playerName);
     } catch (error) {
       console.error('Error saving score:', error);
       return false;
     }
   }
 
-  public async resetLeaderboard(): Promise<void> {
-    try {
-      await this.sheetsService.resetLeaderboard();
-      // Reset game state to initial state
-      await this.sheetsService.updateGameState('unlockedLevels', [2]);
-      // Update cache
-      this.cachedLeaderboard = [];
-      this.cachedUnlockedLevels = [2];
-    } catch (error) {
-      console.error('Error resetting leaderboard:', error);
-    }
-  }
-
   public async isLevelUnlocked(level: number): Promise<boolean> {
     try {
+      if (this.useLocalStorageOnly) {
+        const unlockedLevels = localStorage.getItem(this.UNLOCKS_KEY);
+        return unlockedLevels ? JSON.parse(unlockedLevels).includes(level) : level === 2;
+      }
       const gameState = await this.sheetsService.getGameState();
-      this.cachedUnlockedLevels = gameState.unlockedLevels || [2];
-      return this.cachedUnlockedLevels.includes(level);
+      return gameState.unlockedLevels?.includes(level) || level === 2;
     } catch (error) {
       console.error('Error checking level unlock status:', error);
-      return this.cachedUnlockedLevels.includes(level);
+      const unlockedLevels = localStorage.getItem(this.UNLOCKS_KEY);
+      return unlockedLevels ? JSON.parse(unlockedLevels).includes(level) : level === 2;
     }
   }
 
   private async unlockNextLevel(currentLevel: number): Promise<void> {
     const nextLevel = currentLevel + 1;
-    if (nextLevel <= 9 && !this.cachedUnlockedLevels.includes(nextLevel)) {
-      const newUnlockedLevels = [...this.cachedUnlockedLevels, nextLevel];
+    if (nextLevel <= 9) {
       try {
-        await this.sheetsService.updateGameState('unlockedLevels', newUnlockedLevels);
-        this.cachedUnlockedLevels = newUnlockedLevels;
+        if (this.useLocalStorageOnly) {
+          const unlockedLevels = localStorage.getItem(this.UNLOCKS_KEY);
+          const levels = unlockedLevels ? JSON.parse(unlockedLevels) : [2];
+          if (!levels.includes(nextLevel)) {
+            levels.push(nextLevel);
+            localStorage.setItem(this.UNLOCKS_KEY, JSON.stringify(levels));
+          }
+          return;
+        }
+        await this.sheetsService.updateGameState('unlockedLevels', [nextLevel]);
       } catch (error) {
         console.error('Error unlocking next level:', error);
       }
     }
-  }
-
-  private sortEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-    return entries.sort((a, b) => a.level - b.level);
   }
 }

@@ -29,7 +29,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   const [isInitialized, setIsInitialized] = useState(false);
 
   const countInversions = (board: (number | null)[] | number[]): number => {
-    const numbers = board.filter((x): x is number => x !== null);
+    const numbers = board.filter((x): x is number => x !== null) as number[];
     let inversions = 0;
     for (let i = 0; i < numbers.length - 1; i++) {
       for (let j = i + 1; j < numbers.length; j++) {
@@ -52,19 +52,19 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
       [3, 2, null, 1],
       [3, 2, 1, null],
     ];
-    
+
     const chosenConfig = solvableConfigs[Math.floor(Math.random() * solvableConfigs.length)];
     const emptyIndex = chosenConfig.indexOf(null);
     const emptyRow = Math.floor(emptyIndex / 2);
     const inversions = countInversions(chosenConfig.filter((x): x is number => x !== null));
-    
+
     if ((inversions + emptyRow) % 2 !== 0) {
       return [3, null, 2, 1];
     }
-    
+
     return chosenConfig;
   };
-                                         
+
   useEffect(() => {
     if (forceWin) {
       setIsVictory(true);
@@ -75,7 +75,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   const isSolvable = (board: (number | null)[]): boolean => {
     const flatBoard = board.filter((x): x is number => x !== null);
     let inversions = 0;
-    
+
     for (let i = 0; i < flatBoard.length - 1; i++) {
       for (let j = i + 1; j < flatBoard.length; j++) {
         if (flatBoard[i] > flatBoard[j]) inversions++;
@@ -90,11 +90,11 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
 
     const emptyRowFromBottom = size - Math.floor(board.indexOf(null) / size);
 
-    
+
     if (size % 2 === 0) {
       return (inversions + emptyRowFromBottom) % 2 === 0;
     }
-    
+
     return inversions % 2 === 0;
   };
 
@@ -112,7 +112,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
       do {
         board = [...numbers, null].sort(() => Math.random() - 0.5);
         attempts++;
-        
+
         if (attempts >= maxAttempts) {
           if (size === 2) {
             return [1, 2, null, 3];
@@ -124,7 +124,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
 
       return board;
     };
-    
+
     setTiles(generateBoard());
     setIsVictory(false);
     setIsInitialized(true);
@@ -149,10 +149,10 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
 
   const isValidMove = (index: number): boolean => {
     if (!isInitialized) return false;
-    
+
     const emptyIndex = tiles.indexOf(null);
     if (index === emptyIndex) return false;
-    
+
     const row = Math.floor(index / size);
     const col = index % size;
     const emptyRow = Math.floor(emptyIndex / size);
@@ -186,13 +186,13 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
 
   const handleTileClick = (index: number) => {
     if (!isValidMove(index)) return;
-    
+
     const emptyIndex = tiles.indexOf(null);
     const newTiles = [...tiles];
-    
+
     newTiles[emptyIndex] = tiles[index];
     newTiles[index] = null;
-    
+
     setTiles(newTiles);
     onMove();
   };
@@ -200,22 +200,22 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   const solve = useCallback(() => {
     // Add a solving state to prevent multiple solves
     if (isVictory) return;
-    
+
     try {
       const gridSize = Math.sqrt(tiles.length);
       const grid: (number | null)[][] = [];
       for (let i = 0; i < gridSize; i++) {
         grid[i] = tiles.slice(i * gridSize, (i + 1) * gridSize);
       }
-  
+
       const solver = new NPuzzleSolver(grid);
       const solution = solver.solve();
-  
+
       if (!solution) {
         console.error('No solution found');
         return;
       }
-  
+
       let moveIndex = 0;
       const animateMove = () => {
         if (moveIndex >= solution.length) {
@@ -223,25 +223,25 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
           onVictory();
           return;
         }
-  
+
         const move = solution[moveIndex];
         setTiles(prevTiles => {
           const newTiles = [...prevTiles];
           const currentIndex = move.piece.y * gridSize + move.piece.x;
           const emptyIndex = newTiles.indexOf(null);
-          
+
           if (emptyIndex === -1) return prevTiles;
-          
+
           newTiles[emptyIndex] = newTiles[currentIndex];
           newTiles[currentIndex] = null;
           return newTiles;
         });
-        
+
         onMove();
         moveIndex++;
         setTimeout(animateMove, 200);
       };
-  
+
       animateMove();
     } catch (error) {
       console.error('Error during solve:', error);
@@ -259,7 +259,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
           <div className="text-4xl font-bold text-blue-500 mb-2" data-testid="victory-text">Solved!</div>
           <div className="text-2xl">Your result: {moves}</div>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-4 w-full max-w-md">
           <button
             onClick={onChooseLevel}
@@ -269,7 +269,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
             <span className="text-xl mb-2">Choose level</span>
             <span className="text-4xl">✸</span>
           </button>
-          
+
           <button
             onClick={onRetry}
             className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
@@ -278,7 +278,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
             <span className="text-xl mb-2">Retry again</span>
             <span className="text-4xl">↺</span>
           </button>
-          
+
           <button
             onClick={onNextLevel}
             className="flex flex-col items-center p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50"
@@ -293,7 +293,7 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
   }
 
   return (
-    <div 
+    <div
       className="grid gap-0.5 p-0.5 h-full"
       style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
       data-testid="game-board"
@@ -306,8 +306,8 @@ export const GameBoard = forwardRef<{ solve: () => void }, GameBoardProps>(({
             aspect-square border-2 rounded
             flex items-center justify-center text-2xl font-semibold
             transition-all duration-200
-            ${number 
-              ? 'border-blue-500 text-blue-500 bg-white hover:bg-blue-50' 
+            ${number
+              ? 'border-blue-500 text-blue-500 bg-white hover:bg-blue-50'
               : 'border-none bg-transparent cursor-default'
             }
             ${isValidMove(index) ? 'cursor-pointer' : 'cursor-not-allowed'}
