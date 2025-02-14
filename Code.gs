@@ -1,4 +1,4 @@
-// Code.gs
+// Code.gs for Google Sheets
 function setCorsHeaders(output) {
   if (!output) {
     output = ContentService.createTextOutput('');
