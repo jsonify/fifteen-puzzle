@@ -11,63 +11,51 @@ interface GameState {
 }
 
 export class GoogleSheetsService {
-    private readonly API_URL: string;
-    private isApiAccessible: boolean = true;
+  private readonly API_URL: string;
+  private isApiAccessible: boolean = true;
 
-    constructor(apiUrl: string) {
+  constructor(apiUrl: string) {
       this.API_URL = apiUrl;
-    }
+      console.log('Initializing GoogleSheetsService with URL:', apiUrl);
+  }
 
-    // Try once to access the API and then disable if not available
-    private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
+  private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
       const defaultOptions: RequestInit = {
-        method: 'GET',
-        mode: 'no-cors', // Use no-cors mode for Google Apps Script
-        redirect: 'follow',
-        credentials: 'omit'
+          method: 'GET',
+          mode: 'no-cors', // Switch back to no-cors for now
+          headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+          },
+          redirect: 'follow',
       };
 
       try {
-        const response = await fetch(url, { ...defaultOptions, ...options });
-        if (!response.ok && response.type !== 'opaque') {
-          throw new Error('API request failed');
-        }
-        // With no-cors mode, we won't get JSON back, so assume success if we get here
-        return { success: true };
+          const response = await fetch(url, { ...defaultOptions, ...options });
+
+          // With no-cors, we can't read the response
+          // Return a default successful response
+          return { success: true, data: [] };
       } catch (error) {
-        console.error('API request failed:', error);
-        throw error;
+          console.error('API request failed:', error);
+          this.isApiAccessible = false;
+          // Don't throw, just return null to fall back to localStorage
+          return null;
       }
-    }
+  }
 
-    private async checkApiAccess(): Promise<void> {
-      if (!this.isApiAccessible) return;
-
+  async getGameState(): Promise<{ unlockedLevels: number[] }> {
       try {
-        await this.makeRequest(`${this.API_URL}?action=getGameState`);
+          const response = await this.makeRequest(`${this.API_URL}?action=getGameState`);
+          if (!response) {
+              return { unlockedLevels: [2] }; // Default state
+          }
+          return response.data || { unlockedLevels: [2] };
       } catch (error) {
-        console.error('API connectivity check failed:', error);
-        this.isApiAccessible = false;
+          console.warn('Falling back to default game state');
+          return { unlockedLevels: [2] };
       }
-    }
-
-    async getGameState(): Promise<GameState> {
-        await this.checkApiAccess();
-        if (!this.isApiAccessible) {
-            return { unlockedLevels: [2] };
-        }
-
-        try {
-            await this.makeRequest(`${this.API_URL}?action=getGameState`);
-            // Since we can't get actual data in no-cors mode,
-            // return default state if we get here without errors
-            return { unlockedLevels: [2] };
-        } catch (error) {
-            console.error('Error getting game state:', error);
-            this.isApiAccessible = false;
-            return { unlockedLevels: [2] };
-        }
-    }
+  }
 
     async updateGameState(key: string, value: any): Promise<boolean> {
         if (!this.isApiAccessible) return false;

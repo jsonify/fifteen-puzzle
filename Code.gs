@@ -5,9 +5,13 @@ function setCorsHeaders(output) {
   }
 
   output.setMimeType(ContentService.MimeType.JSON);
-  output.addHeader('Access-Control-Allow-Origin', '*');
+
+  // Add specific origin instead of wildcard
+  output.addHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
   output.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   output.addHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  output.addHeader('Access-Control-Allow-Credentials', 'true');
+
   return output;
 }
 
